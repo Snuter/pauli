@@ -1,0 +1,18 @@
+# Git attributes for line endings and other settings
+# =======================================
+
+# Use Unix (LF) line endings by default
+* text eol=lf
+
+# Override specific file types if needed
+*.py text eol=lf              # Python files use LF
+
+# Don't convert line endings for binary files or generated files
+*.png binary                  # PNG images (no line ending conversion)
+*.jpg binary                  # JPG images
+*.gif binary                  # GIF images
+*.svg binary                  # SVG graphics
+*.ico binary                  # Icon files
+
+# Mark text files so git handles them appropriately
+*.* text                      # Default: treat as text, not binary
