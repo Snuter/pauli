@@ -1,0 +1,21 @@
+[project]
+name = "pauli"
+version = "0.1.0"
+description = "Patient-centered AI for Understanding Literature and Insights"
+authors = [
+    {name = "Snuter"}
+]
+license = "MIT License"
+requires-python = ">=3.13"
+dependencies = [
+]
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.1.1,<10.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
