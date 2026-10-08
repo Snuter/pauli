@@ -1,41 +1,27 @@
-# P.A.U.L.I. — Concept Plan
+# P.A.U.L.I. — Technical Concept
 Patient-centered AI for Understanding Literature and Insights
 
-## 1. Vision
-Make Open Access science from Europe PMC (https://europepmc.org/downloads/openaccess)
-queryable by patients in plain language, without hallucination, with care for
-critical information.
+See also: `concept-user-journey.md` for user flows.
+Source: Europe PMC Open Access subset (https://europepmc.org/downloads/openaccess).
 
-Primary user: person living with a chronic / rare condition (e.g. ME/CFS,
-fatigue, post-exertional malaise / PEM) tracking research over time.
+## 1. Scope & constraints
 
-Non-goals: diagnosis, treatment recommendation, symptom triage. Research
-information only, not medical advice.
-
-## 2. Core principles (patient lens)
-- Low energy / brain fog: short answers, save-for-later, Simple mode by default.
-- Uncertainty: show what is known / unknown / in whom it was studied.
-- Trust: every factual claim has a citation back to Europe PMC. No invented details.
-- Honesty: system states when it does not know.
-- Safety: gated trigger warnings before critical content.
-- Continuity: follow topics, see what is new, print a 1-page summary for doctor visits.
-
-## 3. Scope decided
-- Data: cached Europe PMC Open Access subset, keyed by patient-provided buzzwords.
-  No built-in defaults. Example user input: `myalgic encephalomyelitis`, `PEM`.
+- Data: cached Europe PMC Open Access subset, keyed by patient-provided
+  buzzwords. No built-in defaults in code or DB.
 - Interaction: Chat Q&A over cached papers.
 - Safety: gated warning cards (blur + reveal).
 - MVP shape: local web app + RAG (Python >=3.13, Poetry, pytest).
 - Sync: weekly manual sync, no auto-cron in MVP.
+- Compliance: only OA subset per Europe PMC terms. No bulk scraping of non-OA.
 
-## 4. Data pipeline
-1. Onboarding: patient enters 1-5 buzzwords. No defaults in code or DB.
+## 2. Data pipeline
+
+1. Onboarding input: 1–5 buzzwords. No defaults in code or DB.
 2. Validate: for each term, query Europe PMC REST API for
    `OPEN_ACCESS:Y AND TITLE_ABS:"<term>"`, check hit count.
    Reject empty / single-letter / too-broad (>50k hits) with a narrow-down hint.
 3. Ingest: fetch metadata + OA full text / abstract, store raw in
    `data/topics/<topic-hash>/raw/`, normalized rows in SQLite `data/pauli.db`.
-   Only OA subset per Europe PMC terms. No bulk scraping of non-OA.
 4. Index: chunk abstracts/sections, embed locally (e.g. sentence-transformers),
    store vectors in sqlite-vec / faiss / chroma with PMCID, title, year, authors,
    Europe PMC URL.
@@ -43,7 +29,8 @@ information only, not medical advice.
    `FIRST_PDATE:[last_sync TO NOW]`. Dedup by PMCID, append-only, re-embed new
    chunks. UI shows `3 new papers since 2026-09-30`.
 
-## 5. Chat Q&A + anti-hallucination
+## 3. Chat Q&A + anti-hallucination
+
 Pipeline: rewrite query -> retrieve top-k chunks above score threshold ->
 generate from chunks only -> post-check citations -> render.
 
@@ -58,21 +45,23 @@ Built-in guidelines:
 - Distinguish: no papers cached vs papers cached but no answer vs conflicting papers.
 - Tests: citation-presence test, citation-validity test, abstention test.
 
-## 6. Language modes
+## 4. Language modes (implementation)
+
 Toggle: `Standard / Simple`. Same chunks and citations, different wording.
 
-- Standard: grade 8-10, keeps term + short definition,
+- Standard: grade 8–10, keeps term + short definition,
   e.g. `post-exertional malaise (crash after effort)`.
-- Simple: grade 5-6, sentences <15 words, expand all acronyms, use glossary
+- Simple: grade 5–6, sentences <15 words, expand all acronyms, use glossary
   (`PEM -> crash after effort`), add `What this means:` line.
 - Simplification must not add facts. Citation check applies to both modes.
 - Default: Simple for first answer to reduce cognitive load.
+- Verify with readability scores per mode.
 
-## 7. Trigger warnings (gated)
-Categories: prognosis/mortality, suicidality, severe disability, pregnancy/children,
-medical trauma, PEM crash risk.
+## 5. Trigger warnings (implementation)
 
-Behavior:
+Categories: prognosis/mortality, suicidality, severe disability,
+pregnancy/children, medical trauma, PEM crash risk.
+
 - Detector: keyword + classifier on retrieved chunks and draft answer.
 - UI: blurred card `This answer contains [category] — Show / Skip / Why am I
   seeing this?` Click-to-reveal only. Simple mode uses gentler wording.
@@ -80,22 +69,17 @@ Behavior:
   where relevant.
 - Sensitivity profile stored locally: `low / standard / hide details`.
 - Log warnings shown/skipped (no PHI) for evaluation.
+- Tests per category; gate must fire in both language modes.
 
-## 8. Tracker + doctor printout
+## 6. Tracker + doctor printout (implementation)
+
 - Follow topics, weekly manual digest in plain language.
-- Personal library: save answers/papers.
+- Personal library: save answers/papers (SQLite relations to PMCID + answer id).
 - Export: 1-page Markdown/PDF with question, short answer, citations, unknowns,
   suggested questions for doctor.
 
-## 9. MVP phases
-1. P0 cache + search: fetch ~500 papers for a user topic, verify cache hit and
-   citation links. Verify: `pytest`.
-2. P1 RAG chat: `What triggers PEM?` -> <150 words, grade-appropriate,
-   3+ Europe PMC links, or explicit unknown.
-3. P2 warnings: prognosis-type query shows gate before details. Tests per category.
-4. P3 tracker + printout: follow topic, manual sync digest, doctor export.
+## 7. Tech stack & layout
 
-## 10. Tech sketch
 - Backend: FastAPI, SQLite + sqlite-vec, local embeddings.
 - Frontend: minimal server-rendered UI (HTMX) or Streamlit for MVP.
 - LLM: Ollama-local via `run_opencode.sh` (`MODEL` var) to avoid sending health
@@ -103,7 +87,17 @@ Behavior:
 - Layout: `pauli/ingest/`, `pauli/index/`, `pauli/qa/`, `pauli/safety/`,
   `pauli/web/`, `data/`, `tests/`.
 
-## 11. Success criteria
+## 8. MVP phases & verification
+
+1. P0 cache + search: fetch ~500 papers for a user topic, verify cache hit and
+   citation links. Verify: `pytest`.
+2. P1 RAG chat: `What triggers PEM?` -> <150 words, grade-appropriate,
+   3+ Europe PMC links, or explicit unknown.
+3. P2 warnings: prognosis-type query shows gate before details. Tests per category.
+4. P3 tracker + printout: follow topic, manual sync digest, doctor export.
+
+## 9. Success criteria (technical)
+
 - All factual sentences cited and resolvable to cached PMCID.
 - Zero invented citations on abstention tests.
 - Warning gate appears before gated content in both language modes.
