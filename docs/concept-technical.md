@@ -22,17 +22,20 @@ Source: Europe PMC Open Access subset (https://europepmc.org/downloads/openacces
    Reject empty / single-letter / too-broad (>50k hits) with a narrow-down hint.
 3. Ingest: fetch metadata + OA full text / abstract, store raw in
    `data/topics/<topic-hash>/raw/`, normalized rows in SQLite `data/pauli.db`.
-4. Index: chunk abstracts/sections, embed locally (e.g. sentence-transformers),
-   store vectors in sqlite-vec / faiss / chroma with PMCID, title, year, authors,
-   Europe PMC URL.
+4. Index: chunk abstracts/sections (~512 tokens, 50 overlap), embed locally via
+   `pauli/index/embed.py` (`ollama/nomic-embed-text` default, sentence-transformers
+   alternative), store vectors in sqlite-vec alongside metadata with PMCID, title,
+   year, authors, Europe PMC URL, `topic_hash`.
 5. Sync: per-topic `last_sync` timestamp. `Check for new papers` button queries
    `FIRST_PDATE:[last_sync TO NOW]`. Dedup by PMCID, append-only, re-embed new
    chunks. UI shows `3 new papers since 2026-09-30`.
 
 ## 3. Chat Q&A + anti-hallucination
 
-Pipeline: rewrite query -> retrieve top-k chunks above score threshold ->
-generate from chunks only -> post-check citations -> render.
+Pipeline: rewrite query (`pauli/questionanswering/retrieve.py`) -> retrieve top-k chunks above
+score threshold (`pauli/questionanswering/retrieve.py` + `pauli/index/store.py`) ->
+generate from chunks only via local Ollama (`pauli/questionanswering/generate.py`) ->
+post-check citations in code (`pauli/questionanswering/citations.py`, `pauli/questionanswering/abstain.py`) -> render.
 
 Built-in guidelines:
 - System prompt: only use retrieved chunks. No general knowledge.
@@ -81,10 +84,17 @@ pregnancy/children, medical trauma, PEM crash risk.
 ## 7. Tech stack & layout
 
 - Backend: FastAPI, SQLite + sqlite-vec, local embeddings.
+- RAG: Option A hand-rolled minimal (no LangChain/LlamaIndex/Haystack in MVP).
+  Embeddings behind `pauli/index/embed.py` (`ollama/nomic-embed-text` default,
+  `sentence-transformers/all-MiniLM-L6-v2` alternative). Vectors in `sqlite-vec`
+  in `data/pauli.db` with `topic_hash` filter for per-topic isolation and
+  append-only sync. Generation via `ollama-python` to localhost Ollama.
+  Citation gate + abstention enforced in code, not framework defaults.
+  Revisit LlamaIndex only if hybrid search/reranking proves necessary.
 - Frontend: minimal server-rendered UI (HTMX) or Streamlit for MVP.
-- LLM: Ollama-local via `run_opencode.sh` (`MODEL` var) to avoid sending health
+- LLM: Ollama-local via `setup_dev_ai.sh` (`MODEL` var) to avoid sending health
   queries externally.
-- Layout: `pauli/ingest/`, `pauli/index/`, `pauli/qa/`, `pauli/safety/`,
+- Layout: `pauli/ingest/`, `pauli/index/`, `pauli/questionanswering/`, `pauli/safety/`,
   `pauli/web/`, `data/`, `tests/`.
 
 ## 8. MVP phases & verification
