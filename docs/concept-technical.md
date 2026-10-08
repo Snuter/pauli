@@ -11,16 +11,20 @@ Source: Europe PMC Open Access subset (https://europepmc.org/downloads/openacces
 - Interaction: Chat Q&A over cached papers.
 - Safety: gated warning cards (blur + reveal).
 - MVP shape: local web app + RAG (Python >=3.13, Poetry, pytest).
+  Single-user local, no auth. Frontend is FastAPI + Jinja + HTMX only.
 - Sync: weekly manual sync, no auto-cron in MVP.
 - Compliance: only OA subset per Europe PMC terms. No bulk scraping of non-OA.
 
 ## 2. Data pipeline
 
 1. Onboarding input: 1–5 buzzwords. No defaults in code or DB.
+   Combined with OR-union: `OPEN_ACCESS:Y AND (TITLE_ABS:"<t1>" OR TITLE_ABS:"<t2>" ...)`.
 2. Validate: for each term, query Europe PMC REST API for
    `OPEN_ACCESS:Y AND TITLE_ABS:"<term>"`, check hit count.
    Reject empty / single-letter / too-broad (>50k hits) with a narrow-down hint.
-3. Ingest: fetch metadata + OA full text / abstract, store raw in
+3. Ingest: fetch all matching papers (no 500-paper cap), paged
+   metadata + OA full text / abstract fetch with progress UI and idempotent
+   resume on PMCID, store raw in
    `data/topics/<topic-hash>/raw/`, normalized rows in SQLite `data/pauli.db`.
 4. Index: chunk abstracts/sections (~512 tokens, 50 overlap), embed via
    user-configured Ollama (`pauli/index/embed.py`, `OLLAMA_EMBED_MODEL`
@@ -34,12 +38,16 @@ Source: Europe PMC Open Access subset (https://europepmc.org/downloads/openacces
 ## 3. Chat Q&A + anti-hallucination
 
 Pipeline: rewrite query (`pauli/questionanswering/retrieve.py`) -> retrieve top-k chunks above
-score threshold (`pauli/questionanswering/retrieve.py` + `pauli/index/store.py`) ->
+score threshold (`pauli/questionanswering/retrieve.py` + `pauli/index/store.py`,
+defaults `TOP_K=15`, `SCORE_THRESHOLD=0.3`, plus a user-calibration
+`strictness 0–100` slider mapping to threshold `0.0–0.6`, `TOP_K` fixed) ->
 generate from chunks only via user-configured Ollama
 (`pauli/questionanswering/generate.py` via `ollama-python` against
 `OLLAMA_HOST` with `OLLAMA_CHAT_MODEL`; `OLLAMA_API_KEY` only for the cloud
 endpoint; never via the `ollama launch opencode` dev harness) ->
 post-check citations in code (`pauli/questionanswering/citations.py`, `pauli/questionanswering/abstain.py`) -> render.
+Missing chat model (or missing cloud key for a cloud host) is a hard
+misconfiguration error with a setup hint; the app reports it instead of answering.
 
 Built-in guidelines:
 - System prompt: only use retrieved chunks. No general knowledge.
@@ -50,11 +58,14 @@ Built-in guidelines:
 - Unknown template: `I don't know from your saved papers — [what is missing,
   what term to add, what to ask your doctor]`.
 - Distinguish: no papers cached vs papers cached but no answer vs conflicting papers.
+  Conflicting papers: no automatic contradiction detection in MVP; present both
+  cited sides plus an unknown note.
 - Tests: citation-presence test, citation-validity test, abstention test.
 
 ## 4. Language modes (implementation)
 
-Toggle: `Standard / Simple`. Same chunks and citations, different wording.
+Toggle: `Standard / Simple` plus a `simplicity` slider for Simple-mode intensity
+(sentence length 10–15, glossary on/off). Same chunks and citations, different wording.
 
 - Standard: grade 8–10, keeps term + short definition,
   e.g. `post-exertional malaise (crash after effort)`.
@@ -62,7 +73,7 @@ Toggle: `Standard / Simple`. Same chunks and citations, different wording.
   (`PEM -> crash after effort`), add `What this means:` line.
 - Simplification must not add facts. Citation check applies to both modes.
 - Default: Simple for first answer to reduce cognitive load.
-- Verify with readability scores per mode.
+- Verify with `textstat` Flesch-Kincaid readability scores per mode.
 
 ## 5. Trigger warnings (implementation)
 
@@ -74,7 +85,9 @@ pregnancy/children, medical trauma, PEM crash risk.
   seeing this?` Click-to-reveal only. Simple mode uses gentler wording.
 - Always show: `Research info only, not medical advice` + local crisis resources
   where relevant.
-- Sensitivity profile stored locally: `low / standard / hide details`.
+- Sensitivity profile stored locally (single-user, no auth): `low` = gate only
+  suicidality/self-harm, `standard` = gate all 6 categories,
+  `hide details` = title-only gate requiring double-confirm to reveal.
 - Log warnings shown/skipped (no PHI) for evaluation.
 - Tests per category; gate must fire in both language modes.
 
@@ -82,8 +95,9 @@ pregnancy/children, medical trauma, PEM crash risk.
 
 - Follow topics, weekly manual digest in plain language.
 - Personal library: save answers/papers (SQLite relations to PMCID + answer id).
-- Export: 1-page Markdown/PDF with question, short answer, citations, unknowns,
-  suggested questions for doctor.
+  Single-user local, no auth; no retention/delete button in MVP.
+- Export: 1-page browser print-view HTML (user prints to PDF) with question,
+  short answer, citations, unknowns, suggested questions for doctor.
 
 ## 7. Tech stack & layout
 
@@ -97,7 +111,7 @@ pregnancy/children, medical trauma, PEM crash risk.
   Ollama (`OLLAMA_HOST` + `OLLAMA_CHAT_MODEL`), never via opencode.
   Citation gate + abstention enforced in code, not framework defaults.
   Revisit LlamaIndex only if hybrid search/reranking proves necessary.
-- Frontend: minimal server-rendered UI (HTMX) or Streamlit for MVP.
+- Frontend: minimal server-rendered UI with FastAPI + Jinja + HTMX only.
 - LLM: user-configured Ollama, local or cloud. `OLLAMA_HOST` (default
   `http://localhost:11434`; cloud endpoint for cloud models),
   `OLLAMA_CHAT_MODEL` / `OLLAMA_EMBED_MODEL` (no shipped default chat model),
@@ -114,7 +128,8 @@ pregnancy/children, medical trauma, PEM crash risk.
 
 ## 8. MVP phases & verification
 
-1. P0 cache + search: fetch ~500 papers for a user topic, verify cache hit and
+1. P0 cache + search: fetch all matching papers for a user topic (OR-union,
+   paged, progress + idempotent resume), verify cache hit and
    citation links. Verify: `pytest`.
 2. P1 RAG chat: `What triggers PEM?` -> <150 words, grade-appropriate,
    3+ Europe PMC links, or explicit unknown.
