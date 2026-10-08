@@ -1,4 +1,9 @@
 #!/bin/bash
+# DEV-ONLY setup for working ON this project (coding agent + its local model).
+# NOT used by the P.A.U.L.I. app at runtime. In particular the app never uses
+# the `ollama launch opencode` harness below. The app talks directly to
+# user-configured Ollama (local or cloud) models
+# (see docs/concept-technical.md §7, README.md).
 # stop on errors
 set -e
 

@@ -22,9 +22,10 @@ Source: Europe PMC Open Access subset (https://europepmc.org/downloads/openacces
    Reject empty / single-letter / too-broad (>50k hits) with a narrow-down hint.
 3. Ingest: fetch metadata + OA full text / abstract, store raw in
    `data/topics/<topic-hash>/raw/`, normalized rows in SQLite `data/pauli.db`.
-4. Index: chunk abstracts/sections (~512 tokens, 50 overlap), embed locally via
-   `pauli/index/embed.py` (`ollama/nomic-embed-text` default, sentence-transformers
-   alternative), store vectors in sqlite-vec alongside metadata with PMCID, title,
+4. Index: chunk abstracts/sections (~512 tokens, 50 overlap), embed via
+   user-configured Ollama (`pauli/index/embed.py`, `OLLAMA_EMBED_MODEL`
+   default `nomic-embed-text`; `sentence-transformers/all-MiniLM-L6-v2`
+   as offline alternative), store vectors in sqlite-vec alongside metadata with PMCID, title,
    year, authors, Europe PMC URL, `topic_hash`.
 5. Sync: per-topic `last_sync` timestamp. `Check for new papers` button queries
    `FIRST_PDATE:[last_sync TO NOW]`. Dedup by PMCID, append-only, re-embed new
@@ -34,7 +35,10 @@ Source: Europe PMC Open Access subset (https://europepmc.org/downloads/openacces
 
 Pipeline: rewrite query (`pauli/questionanswering/retrieve.py`) -> retrieve top-k chunks above
 score threshold (`pauli/questionanswering/retrieve.py` + `pauli/index/store.py`) ->
-generate from chunks only via local Ollama (`pauli/questionanswering/generate.py`) ->
+generate from chunks only via user-configured Ollama
+(`pauli/questionanswering/generate.py` via `ollama-python` against
+`OLLAMA_HOST` with `OLLAMA_CHAT_MODEL`; `OLLAMA_API_KEY` only for the cloud
+endpoint; never via the `ollama launch opencode` dev harness) ->
 post-check citations in code (`pauli/questionanswering/citations.py`, `pauli/questionanswering/abstain.py`) -> render.
 
 Built-in guidelines:
@@ -83,17 +87,28 @@ pregnancy/children, medical trauma, PEM crash risk.
 
 ## 7. Tech stack & layout
 
-- Backend: FastAPI, SQLite + sqlite-vec, local embeddings.
+- Backend: FastAPI, SQLite + sqlite-vec, Ollama embeddings.
 - RAG: Option A hand-rolled minimal (no LangChain/LlamaIndex/Haystack in MVP).
-  Embeddings behind `pauli/index/embed.py` (`ollama/nomic-embed-text` default,
-  `sentence-transformers/all-MiniLM-L6-v2` alternative). Vectors in `sqlite-vec`
+  Embeddings behind `pauli/index/embed.py` (user-configured Ollama
+  `OLLAMA_EMBED_MODEL` default `nomic-embed-text`,
+  `sentence-transformers/all-MiniLM-L6-v2` as offline alternative). Vectors in `sqlite-vec`
   in `data/pauli.db` with `topic_hash` filter for per-topic isolation and
-  append-only sync. Generation via `ollama-python` to localhost Ollama.
+  append-only sync. Generation via `ollama-python` against user-configured
+  Ollama (`OLLAMA_HOST` + `OLLAMA_CHAT_MODEL`), never via opencode.
   Citation gate + abstention enforced in code, not framework defaults.
   Revisit LlamaIndex only if hybrid search/reranking proves necessary.
 - Frontend: minimal server-rendered UI (HTMX) or Streamlit for MVP.
-- LLM: Ollama-local via `setup_dev_ai.sh` (`MODEL` var) to avoid sending health
-  queries externally.
+- LLM: user-configured Ollama, local or cloud. `OLLAMA_HOST` (default
+  `http://localhost:11434`; cloud endpoint for cloud models),
+  `OLLAMA_CHAT_MODEL` / `OLLAMA_EMBED_MODEL` (no shipped default chat model),
+  `OLLAMA_API_KEY` required only for the cloud endpoint (empty for local;
+  via env or gitignored `.env`, never logged or committed).
+  The app fails closed on missing model / missing cloud key.
+  `setup_dev_ai.sh` is dev-only (installs Ollama + opencode coding agent for
+  working ON this project, including the `ollama launch opencode` harness)
+  and is NOT used by the app at runtime. Local mode keeps health queries on
+  the user's machine; cloud mode is covered by that provider's terms —
+  retrieval/caching stays local.
 - Layout: `pauli/ingest/`, `pauli/index/`, `pauli/questionanswering/`, `pauli/safety/`,
   `pauli/web/`, `data/`, `tests/`.
 

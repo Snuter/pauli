@@ -1,19 +1,20 @@
 # P.A.U.L.I. — Implementation Plan
 
 Source: `docs/concept-technical.md` + `docs/concept-user-journey.md`.
-Stack: Python >=3.13, Poetry, pytest, FastAPI, SQLite + sqlite-vec, Ollama-local.
+Stack: Python >=3.13, Poetry, pytest, FastAPI, SQLite + sqlite-vec, user-configured Ollama (local or cloud).
 Constraints: no built-in default topics in code or DB; OA subset only; weekly manual sync, no cron.
+`setup_dev_ai.sh` is dev-only (opencode agent tooling, incl. the `ollama launch opencode` harness) and is not a runtime dependency; the app talks directly to user-configured Ollama via `ollama-python`, never via opencode; no shipped default model or key.
 
 Conventions used below: each step is one unit of work. `Verify:` is the done-criteria. Run `poetry run pytest tests/<file>` after each code step.
 
 ## Phase S — Skeleton + config + DB (prereq for all P0–P3)
 
-- [ ] S1 Add runtime deps to `pyproject.toml`: `fastapi`, `uvicorn`, `httpx`, `sqlite-vec`, `ollama-python`, `jinja2`. Keep `sentence-transformers` optional (alternative embed backend only).
+- [ ] S1 Add runtime deps to `pyproject.toml`: `fastapi`, `uvicorn`, `httpx`, `sqlite-vec`, `ollama-python`, `jinja2`. Keep `sentence-transformers` optional (offline embed alternative only).
       Verify: `poetry install` succeeds, `poetry run pytest` collects (0 tests OK).
 - [ ] S2 Create package skeleton with `__init__.py` per dir: `pauli/ingest/`, `pauli/index/`, `pauli/questionanswering/`, `pauli/safety/`, `pauli/tracker/`, `pauli/web/`, `tests/`. No logic yet.
       Verify: `poetry run python -c "import pauli"` succeeds.
-- [ ] S3 Add `pauli/config.py`: paths (`data/pauli.db`, `data/topics/<hash>/raw/`), `MODEL` env default matching `setup_dev_ai.sh`, `CHUNK_TOKENS=512`, `CHUNK_OVERLAP=50`, `TOP_K`, `SCORE_THRESHOLD`, `HIT_LIMIT=50000`, `OPEN_ACCESS:Y` filter.
-      Verify: unit test asserts constants importable; no topic strings hardcoded.
+- [ ] S3 Add `pauli/config.py`: paths (`data/pauli.db`, `data/topics/<hash>/raw/`), `CHUNK_TOKENS=512`, `CHUNK_OVERLAP=50`, `TOP_K`, `SCORE_THRESHOLD`, `HIT_LIMIT=50000`, `OPEN_ACCESS:Y` filter; Ollama via `OLLAMA_HOST` (default `http://localhost:11434`), `OLLAMA_CHAT_MODEL` + `OLLAMA_EMBED_MODEL` (default `nomic-embed-text`), `OLLAMA_API_KEY` (only for the cloud endpoint, never committed). No reference to `setup_dev_ai.sh` / `MODEL` here — that script and its `ollama launch opencode` harness are dev-only.
+      Verify: unit test asserts constants importable; no topic strings hardcoded; missing chat model (or missing cloud key for a cloud host) raises a clear misconfiguration error.
 - [ ] S4 Add `pauli/db.py`: init + migrate SQLite + sqlite-vec tables `topics(hash, terms_json, last_sync)`, `papers(pmcid PK, topic_hash, title, year, authors, url, abstract)`, `chunks(id, pmcid, topic_hash, idx, text, vec)`, `answers(id, question, answer, mode)`, `library(...)`, `warning_events(category, action, mode, at — no PHI)`.
       Verify: `tests/test_db.py` creates temp DB, all tables exist.
 - [ ] S5 Gitignore runtime data: `data/pauli.db`, `data/topics/`.
@@ -31,7 +32,7 @@ Conventions used below: each step is one unit of work. `Verify:` is the done-cri
       Verify: mocked fetch of 3 papers writes 3 raw files + 3 DB rows; rerun is idempotent on PMCID.
 - [ ] P0.5 `pauli/index/chunk.py`: chunk abstracts/sections ~512 tokens / 50 overlap. Deterministic, no network.
       Verify: `tests/test_chunk.py` asserts chunk size/overlap and PMCID linkage.
-- [ ] P0.6 `pauli/index/embed.py`: `embed(texts)` interface; default `ollama/nomic-embed-text` via `ollama-python`, alternative `sentence-transformers/all-MiniLM-L6-v2`. No other backends.
+- [ ] P0.6 `pauli/index/embed.py`: `embed(texts)` interface; default Ollama `OLLAMA_EMBED_MODEL` (`nomic-embed-text`) via `ollama-python` against `OLLAMA_HOST`, alternative `sentence-transformers/all-MiniLM-L6-v2`. No other backends.
       Verify: mocked Ollama returns fixed dim vectors; interface swappable via config.
 - [ ] P0.7 `pauli/index/store.py`: insert vectors + metadata (`topic_hash` filter), `search_vectors(topic_hash, vec, top_k)`.
       Verify: insert 5 chunks, filtered search returns only matching `topic_hash`.
@@ -44,8 +45,8 @@ Conventions used below: each step is one unit of work. `Verify:` is the done-cri
 
 - [ ] P1.1 `pauli/questionanswering/retrieve.py`: query rewrite + `store.search_vectors` top-k + score threshold filter.
       Verify: below-threshold → empty list (triggers abstain); above-threshold returns chunks.
-- [ ] P1.2 `pauli/questionanswering/generate.py`: Ollama-local generate from chunks only; chunks-only system prompt; no general knowledge.
-      Verify: mocked Ollama; prompt contains all chunks and forbids external knowledge.
+- [ ] P1.2 `pauli/questionanswering/generate.py`: generate from chunks only via user-configured Ollama (`ollama-python` against `OLLAMA_HOST` with `OLLAMA_CHAT_MODEL`; `OLLAMA_API_KEY` only for cloud); never via opencode; chunks-only system prompt; no general knowledge; fail closed on misconfiguration.
+      Verify: mocked Ollama; prompt contains all chunks and forbids external knowledge; no key in logs.
 - [ ] P1.3 `pauli/questionanswering/citations.py`: every factual sentence ends with `[PMCID]`; each cited PMCID ∈ retrieval set; else fail closed.
       Verify: `tests/test_citations.py` — presence test + validity test (invented PMCID rejected).
 - [ ] P1.4 `pauli/questionanswering/abstain.py`: unknown template `I don't know from your saved papers — [...]`; distinguish no-papers / no-answer / conflicting-papers.
@@ -53,7 +54,7 @@ Conventions used below: each step is one unit of work. `Verify:` is the done-cri
 - [ ] P1.5 `pauli/questionanswering/language.py`: `Standard` (grade 8–10) / `Simple` (grade 5–6, <15-word sentences, acronyms expanded, `What this means:` line); same chunks+citations; simplification adds no facts. Default Simple for first answer.
       Verify: `tests/test_language.py` readability scores per mode + citation preservation.
 - [ ] P1.6 `pauli/questionanswering/service.py`: orchestrate rewrite → retrieve → generate → citation-check → abstain → render.
-      Verify: end-to-end with mocked embed+Ollama: happy path returns cited answer; empty retrieval returns unknown template.
+      Verify: end-to-end with mocked embed+Ollama: happy path returns cited answer; empty retrieval returns unknown template; misconfigured Ollama (missing model/key) returns misconfiguration error.
 - [ ] P1.7 `pauli/web/app.py` + `routes_topics.py` + `routes_chat.py`: minimal HTMX chat UI, mode toggle, onboarding buzzword form.
       Verify: manual — `What triggers PEM?` → <150 words, 3+ Europe PMC links, or explicit unknown.
 - [ ] P1-gate: `pytest` green; zero invented citations on abstention tests.
@@ -84,4 +85,4 @@ Conventions used below: each step is one unit of work. `Verify:` is the done-cri
 
 ## Explicit non-goals (do not build in MVP)
 
-Hand-rolled RAG only (no LangChain/LlamaIndex/Haystack); no auto-cron; no diagnosis/treatment logic; no bulk non-OA scraping; no framework-side citation defaults — gate + abstention in our code.
+Hand-rolled RAG only (no LangChain/LlamaIndex/Haystack); no auto-cron; no diagnosis/treatment logic; no bulk non-OA scraping; no framework-side citation defaults — gate + abstention in our code; no opencode harness at runtime (`setup_dev_ai.sh` + `ollama launch opencode` stay dev-only); no shipped/committed model or API key.
