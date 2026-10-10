@@ -12,39 +12,55 @@ def test_settings_visible_by_default(page, mockup_url):
         assert page.get_by_role("heading", name=name).is_visible()
 
 
+def _select_session(page, title):
+    page.locator("#session-list button", has_text=title).click()
+
+
 def test_sessions_seeded(page, mockup_url):
     page.goto(f"{mockup_url}#/ask")
-    sel = page.locator("#session-select")
-    sel.wait_for()
-    options = sel.locator("option").all_text_contents()
-    assert "ME/CFS therapies and details" in options
-    assert "ME/CFS cure research" in options
+    page.locator("#session-list").wait_for()
+    items = page.locator("#session-list button").all_text_contents()
+    assert "ME/CFS therapies and details" in items
+    assert "ME/CFS cure research" in items
+    # No redundant per-view dropdowns: sidebar is the single picker.
+    assert page.locator("#session-select").count() == 0
+    assert page.locator("#doctor-session-select").count() == 0
+    # No Ask entry in the top nav: sessions are the entry point to chat.
+    assert page.get_by_role("link", name="Ask").count() == 0
+
+
+def test_session_opens_chat(page, mockup_url):
+    page.goto(mockup_url)
+    page.locator("#session-list").wait_for()
+    _select_session(page, "ME/CFS cure research")
+    assert page.locator("#view-ask").is_visible()
+    assert "ME/CFS cure research" in page.locator("#ask-session-name").text_content()
 
 
 def test_session_history_isolated(page, mockup_url):
     page.goto(f"{mockup_url}#/ask")
-    page.locator("#session-select").wait_for()
-    page.locator("#session-select").select_option(label="ME/CFS therapies and details")
+    page.locator("#session-list").wait_for()
+    _select_session(page, "ME/CFS therapies and details")
+    assert "ME/CFS therapies and details" in page.locator("#ask-session-name").text_content()
     page.locator("#ask-input").fill("What triggers PEM?")
     page.locator("#ask-form button[type=submit]").click()
     page.locator("#history-list li").first.wait_for()
     assert page.locator("#history-list li").count() == 1
-    page.locator("#session-select").select_option(label="ME/CFS cure research")
+    _select_session(page, "ME/CFS cure research")
     assert page.locator("#history-list li").count() == 0
     assert page.locator("#history-empty").is_visible()
-    page.locator("#session-select").select_option(label="ME/CFS therapies and details")
+    _select_session(page, "ME/CFS therapies and details")
     assert page.locator("#history-list li").count() == 1
 
 
 def test_doctor_sheet_per_session(page, mockup_url):
     page.goto(f"{mockup_url}#/ask")
-    page.locator("#session-select").wait_for()
-    page.locator("#session-select").select_option(label="ME/CFS therapies and details")
+    page.locator("#session-list").wait_for()
+    _select_session(page, "ME/CFS therapies and details")
     page.locator("#ask-input").fill("What triggers PEM?")
     page.locator("#ask-form button[type=submit]").click()
     page.locator("#history-list li").first.wait_for()
     page.goto(f"{mockup_url}#/doctor")
-    page.locator("#doctor-session-select").wait_for()
-    page.locator("#doctor-session-select").select_option(label="ME/CFS therapies and details")
+    # Doctor follows the shared sidebar session, no independent picker.
     assert "ME/CFS therapies and details" in page.locator("#sheet-session").text_content()
     assert "What triggers PEM?" in page.locator("#sheet-q").text_content()

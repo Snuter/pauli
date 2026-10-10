@@ -9,9 +9,14 @@
 .layout { display: grid; grid-template-columns: 240px 1fr; gap: 1rem; max-width: 1100px; margin: 0 auto; padding: 0 1rem; }
 #session-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
 #session-list li { margin: 0; }
-#session-list button { width: 100%; text-align: left; }
+#session-list button { width: 100%; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
 #session-list button[aria-current="true"] { font-weight: 700; }
 aside .no-print { display: flex; flex-direction: column; gap: .4rem; }
+.session-controls { display: flex; flex-direction: column; gap: .4rem; }
+.session-controls-row { display: flex; gap: .4rem; }
+.session-controls-row input { flex: 1; min-width: 0; margin-bottom: 0; }
+.session-controls-row button { flex: 0 0 auto; padding: .4rem .6rem; }
+.session-controls-row button .icon { margin-right: 0; }
 .chat { display: flex; flex-direction: column; gap: .75rem; }
 #history-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
 #history-list li { margin: 0; }
@@ -25,7 +30,7 @@ a .icon, button .icon { margin-right: .4rem; }
 #session-list button .icon { margin-right: .5rem; }
 .sheet { border: 1px solid var(--pico-muted-border-color); border-radius: .5rem; padding: 1rem; }
 @media print { aside, header nav, .no-print { display: none !important; } .layout { display: block; } }
-@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+@media (max-width: 800px) { .layout { grid-template-columns: 170px 1fr; gap: .5rem; padding: 0 .5rem; } }
 </style>
 </head>
 <body>
@@ -33,7 +38,6 @@ a .icon, button .icon { margin-right: .4rem; }
 <nav>
 <ul><li><strong>P.A.U.L.I.</strong> <small>Patient-centered AI for Understanding Literature and Insights</small></li></ul>
 <ul>
-<li><a href="#/ask"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2-3a8 8 0 1 1 15-5z"/></svg>Ask</a></li>
 <li><a href="#/library"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Library</a></li>
 <li><a href="#/doctor"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4a3 3 0 0 1 6 0"/><path d="M9 11h6M9 15h6"/></svg>Doctor</a></li>
 <li><a href="#/settings"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h10M18 8h2M4 16h4M12 16h8"/><circle cx="16" cy="8" r="2"/><circle cx="10" cy="16" r="2"/></svg>Settings</a></li>
@@ -44,12 +48,14 @@ a .icon, button .icon { margin-right: .4rem; }
 <div class="layout">
 <aside>
 <h3><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>Research Sessions</h3>
-<ul id="session-list"></ul>
-<div class="no-print">
-<input id="session-new" type="text" placeholder="New research session title">
-<button id="session-add" type="button"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Create</button>
-<button id="session-delete" type="button" class="secondary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>Delete history</button>
+<div class="no-print session-controls">
+<div class="session-controls-row">
+<input id="session-new" type="text" placeholder="New session title" maxlength="60">
+<button id="session-add" type="button" title="Create research session" aria-label="Create research session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<button id="session-delete" type="button" class="secondary" title="Delete history of active session" aria-label="Delete history of active session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>
 </div>
+</div>
+<ul id="session-list"></ul>
 <hr>
 <p class="meta">Research info only,<br>not medical advice.</p>
 </aside>
@@ -106,11 +112,7 @@ a .icon, button .icon { margin-right: .4rem; }
 <!-- ASK -->
 <section id="view-ask" hidden>
 <h2>Ask</h2>
-<div class="grid">
-<label>Research Session
-<select id="session-select"></select>
-</label>
-</div>
+<p class="meta">Research Session: <strong id="ask-session-name">—</strong> (switch in sidebar)</p>
 <p class="meta">Multiple sessions share one corpus. Retrieval, strictness and simplicity live under Settings and stay global.</p>
 <div class="chat">
 <p id="history-empty">No questions yet in this session. Try: “What triggers PEM?”</p>
@@ -149,9 +151,7 @@ a .icon, button .icon { margin-right: .4rem; }
 <!-- DOCTOR (read-only) -->
 <section id="view-doctor" hidden>
 <h2>Doctor visit — 1-page sheet</h2>
-<label>Research Session
-<select id="doctor-session-select"></select>
-</label>
+<p class="meta">Showing active session from sidebar.</p>
 <article class="sheet">
 <h3 id="sheet-session">—</h3>
 <p><strong>Question:</strong> <span id="sheet-q">—</span></p>
@@ -180,6 +180,7 @@ a .icon, button .icon { margin-right: .4rem; }
   SEEDS.forEach(function (s) { if (!state.histories[s]) state.histories[s] = []; });
   if (!Array.isArray(state.saved)) state.saved = [];
   if (!Array.isArray(state.buzz)) state.buzz = [];
+  if (!state.current || !state.histories[state.current]) state.current = SEEDS[0];
   function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   function sessions() {
     var out = SEEDS.slice();
@@ -271,21 +272,10 @@ a .icon, button .icon { margin-right: .4rem; }
     return unknown(q);
   }
 
-  // ---- ask view ----
-  var sel = $("session-select"), list = $("history-list"), empty = $("history-empty"),
+  // ---- ask view (sidebar is the single session picker) ----
+  var list = $("history-list"), empty = $("history-empty"),
       form = $("ask-form"), input = $("ask-input");
-  function current() { return sel.value || SEEDS[0]; }
-  function refreshSelects() {
-    var ss = sessions();
-    [sel, $("doctor-session-select")].forEach(function (s) {
-      var keep = s.value;
-      s.innerHTML = "";
-      ss.forEach(function (t) {
-        var o = document.createElement("option"); o.value = t; o.textContent = t; s.appendChild(o);
-      });
-      if (keep && ss.indexOf(keep) !== -1) s.value = keep;
-    });
-  }
+  function current() { return state.current || SEEDS[0]; }
   function renderSessionList() {
     var ul = $("session-list"); if (!ul) return;
     ul.innerHTML = "";
@@ -294,10 +284,13 @@ a .icon, button .icon { margin-right: .4rem; }
       var b = document.createElement("button");
       b.type = "button"; b.className = "outline";
       b.appendChild(makeIcon("file"));
-      b.appendChild(document.createTextNode(t));
+      var label = document.createElement("span");
+      label.textContent = t;
+      b.appendChild(label);
+      b.title = t;
       if (t === current()) b.setAttribute("aria-current", "true");
       b.addEventListener("click", function () {
-        sel.value = t; persist();
+        state.current = t; persist();
         if (location.hash !== "#/ask") location.hash = "#/ask";
         renderHistory();
       });
@@ -309,6 +302,8 @@ a .icon, button .icon { margin-right: .4rem; }
     list.innerHTML = "";
     h.forEach(function (item, idx) { list.appendChild(renderItem(item, idx)); });
     empty.hidden = h.length !== 0;
+    var askName = $("ask-session-name");
+    if (askName) askName.textContent = current();
     renderSessionList();
     renderDoctor(); renderLibrary();
   }
@@ -365,13 +360,12 @@ a .icon, button .icon { margin-right: .4rem; }
     persist(); input.value = "";
     renderHistory();
   });
-  sel.addEventListener("change", renderHistory);
   $("session-add").addEventListener("click", function () {
-    var t = $("session-new").value.trim();
+    var t = $("session-new").value.trim().slice(0, 60);
     if (!t) return;
     if (!state.histories[t]) state.histories[t] = [];
+    state.current = t;
     persist(); $("session-new").value = "";
-    refreshSelects(); sel.value = t;
     if (location.hash !== "#/ask") location.hash = "#/ask";
     renderHistory();
   });
@@ -394,10 +388,9 @@ a .icon, button .icon { margin-right: .4rem; }
     });
   }
 
-  // ---- doctor (read-only) ----
+  // ---- doctor (read-only, follows sidebar session) ----
   function renderDoctor() {
-    var ds = $("doctor-session-select");
-    var t = ds.value || current();
+    var t = current();
     var h = state.histories[t] || [];
     $("sheet-session").textContent = t;
     if (h.length) {
@@ -414,8 +407,6 @@ a .icon, button .icon { margin-right: .4rem; }
       $("sheet-doctor").textContent = "—";
     }
   }
-  $("doctor-session-select").addEventListener("change", renderDoctor);
-
   // ---- setup buzzwords ----
   var BROAD = ["pain", "fatigue", "cancer", "virus", "health"];
   function renderBuzz() {
@@ -461,7 +452,7 @@ a .icon, button .icon { margin-right: .4rem; }
   }
   window.addEventListener("hashchange", route);
 
-  refreshSelects(); renderBuzz(); renderHistory(); renderLibrary(); route(); persist();
+  renderBuzz(); renderHistory(); renderLibrary(); route(); persist();
 })();
 </script>
 </body>

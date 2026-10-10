@@ -13,7 +13,7 @@ sources:
 
 # Testing strategy
 
-Two layers. Unit/integration: `pytest` over `tests/test_*.py` with mocked HTTP (Europe PMC) and mocked Ollama vectors/generation; each [implementation](/implementation/index.md) step names its `Verify:` test.[^impl-plan] UI: `python-playwright` via `pytest-playwright` over `tests/ui/` against the static `ui-mockup/` (Chromium `page` fixture, session `mockup_url` file-URL fixture); seed coverage is `test_mockup_smoke.py` — settings (unified setup + preferences) visible by default, nav to Ask, example answer renders with resolvable Europe PMC citation links.
+Two layers. Unit/integration: `pytest` over `tests/test_*.py` with mocked HTTP (Europe PMC) and mocked Ollama vectors/generation; each [implementation](/implementation/index.md) step names its `Verify:` test.[^impl-plan] UI: `python-playwright` via `pytest-playwright` over `tests/ui/` against the static `ui-mockup/` (Chromium `page` fixture, session `mockup_url` file-URL fixture); seed coverage is `test_mockup_smoke.py` — settings (unified setup + preferences) visible by default, nav to Ask, example answer renders with resolvable Europe PMC citation links, sessions driven by the sidebar list (Ask shows the active session name, Doctor follows it, no per-view dropdowns).
 
 # Layout + deps
 

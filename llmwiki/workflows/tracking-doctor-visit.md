@@ -16,6 +16,6 @@ sources:
 * Follow topics. `Check for new papers` shows e.g. `3 new papers since 2026-09-30`.[^user-journey]
 * Weekly manual digest in plain language.[^user-journey]
 * Personal library: save answers/papers for later (low-energy friendly). Single-user local, no auth.[^user-journey]
-* Doctor export: condensed 1-page browser print-view HTML (print to PDF) per asking session, with session title, short answer, citations, unknowns, suggested doctor questions.[^user-journey]
+* Doctor export: condensed 1-page browser print-view HTML (print to PDF) per asking session, with session title, short answer, citations, unknowns, suggested doctor questions.[^user-journey] It always shows the active sidebar session — no separate picker.
 
 [^user-journey]: P.A.U.L.I. User-Journey Concept

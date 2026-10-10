@@ -24,6 +24,7 @@ sources:
 * Sessions are freely user-creatable (create / rename / delete). Seed examples: `ME/CFS therapies and details`, `ME/CFS cure research`. No other defaults.
 * Each session keeps its own Q&A history. Retrieval, strictness, and simplicity live under Settings and stay global.
 * Each session gets its own condensed 1-page printout (see [tracking](/workflows/tracking-doctor-visit.md)).
+* UI: the sidebar `Research Sessions` list is the single session picker and the only entry point to chat — there is no `Ask` nav item (shared active session for Ask and Doctor). Ask shows the active session as read-only text and has no dropdown; Doctor follows the sidebar with no independent picker. New titles are limited to 60 chars; long titles truncate with ellipsis (no sidebar stacking on small screens).
 
 Related: [language](/workflows/language-toggle.md), [gating](/workflows/sensitive-gating.md).
 
