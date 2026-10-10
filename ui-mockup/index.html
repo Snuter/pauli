@@ -17,6 +17,9 @@ aside .no-print { display: flex; flex-direction: column; gap: .4rem; }
 .session-controls-row input { flex: 1; min-width: 0; margin-bottom: 0; }
 .session-controls-row button { flex: 0 0 auto; padding: .4rem .6rem; }
 .session-controls-row button .icon { margin-right: 0; }
+#ask-form { display: flex; gap: 0; }
+#ask-form input { flex: 1; min-width: 0; margin-bottom: 0; }
+#ask-form button { flex: 0 0 auto; white-space: nowrap; }
 .chat { display: flex; flex-direction: column; gap: .75rem; }
 #history-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
 #history-list li { margin: 0; }
@@ -142,10 +145,8 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 <p id="history-empty">No questions yet in this session. Try: “What triggers PEM?”</p>
 <ul id="history-list"></ul>
 <form id="ask-form" role="search">
-<div class="grid">
 <input id="ask-input" type="text" placeholder="What triggers PEM?" autocomplete="off">
 <button type="submit"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>Ask</button>
-</div>
 </form>
 </div>
 </section>
