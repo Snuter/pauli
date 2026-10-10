@@ -162,6 +162,109 @@
   var gateCard = document.getElementById("gate-card");
   var lastAnswer = null;
 
+  // ---------- Asking sessions (shared corpus, history only) ----------
+  var sessions = [
+    { id: "s-therapies", title: "ME/CFS therapies and details", history: [] },
+    { id: "s-cure", title: "ME/CFS cure research", history: [] }
+  ];
+  var activeSessionId = sessions[0].id;
+  var doctorSessionId = sessions[0].id;
+  function activeSession() {
+    return sessions.filter(function (s) { return s.id === activeSessionId; })[0] || sessions[0];
+  }
+  function doctorSession() {
+    return sessions.filter(function (s) { return s.id === doctorSessionId; })[0] || activeSession();
+  }
+  function renderSessionSelects() {
+    var sel = document.getElementById("session-select");
+    var dsel = document.getElementById("doctor-session-select");
+    [sel, dsel].forEach(function (el) {
+      if (!el) return;
+      el.innerHTML = "";
+      sessions.forEach(function (s) {
+        var o = document.createElement("option");
+        o.value = s.id;
+        o.textContent = s.title;
+        el.append(o);
+      });
+    });
+    sel.value = activeSessionId;
+    dsel.value = doctorSessionId;
+  }
+  function renderHistory() {
+    var s = activeSession();
+    var list = document.getElementById("history-list");
+    list.innerHTML = "";
+    document.getElementById("history-empty").hidden = s.history.length > 0;
+    s.history.forEach(function (h) {
+      var li = document.createElement("li");
+      var strong = document.createElement("strong");
+      strong.textContent = h.q;
+      var p = document.createElement("p");
+      p.textContent = h.summary;
+      li.append(strong, p);
+      list.append(li);
+    });
+  }
+  function entrySummary(kind, ex) {
+    if (kind === "unknown") return "No answer in saved papers.";
+    if (kind === "gated") return "Gated answer (" + ex.category + ").";
+    return (isSimple() ? ex.simple : ex.standard).slice(0, 120) + "…";
+  }
+  function recordHistory(q, kind, ex) {
+    var s = activeSession();
+    s.history.push({ q: q, kind: kind, key: ex._key || null, summary: entrySummary(kind, ex) });
+    renderHistory();
+    renderDoctorSheet();
+  }
+  function condensedFor(session) {
+    var last = session.history.length ? session.history[session.history.length - 1] : null;
+    if (!last) return null;
+    var ex = last.key ? EXAMPLES[last.key] : null;
+    return { last: last, ex: ex };
+  }
+  function renderDoctorSheet() {
+    var s = doctorSession();
+    document.getElementById("sheet-session").textContent = s.title;
+    var c = condensedFor(s);
+    if (!c) return;
+    document.getElementById("sheet-q").textContent = c.last.q;
+    if (c.last.kind === "unknown") {
+      document.getElementById("sheet-a").textContent = "No answer in saved papers for this session yet.";
+      document.getElementById("sheet-c").textContent = "—";
+      document.getElementById("sheet-u").textContent = c.ex ? c.ex.text : "—";
+    } else if (c.last.kind === "gated") {
+      document.getElementById("sheet-a").textContent = "Gated answer — reveal in Ask first.";
+      document.getElementById("sheet-c").textContent = "See Ask session history.";
+      document.getElementById("sheet-u").textContent = "Discuss sensitivity with your doctor if needed.";
+    } else if (c.ex) {
+      document.getElementById("sheet-a").textContent = (isSimple() ? c.ex.simple : c.ex.standard);
+      document.getElementById("sheet-c").textContent = (c.ex.cites || []).map(function (x) {
+        return "[" + x[0] + "] " + x[1];
+      }).join(" · ") || "—";
+      document.getElementById("sheet-u").textContent = c.ex.means || "Small studies only.";
+    }
+  }
+  function displayLast(session) {
+    answerCard.hidden = true;
+    gateCard.hidden = true;
+    var last = session.history.length ? session.history[session.history.length - 1] : null;
+    if (!last || !last.key) return;
+    var ex = EXAMPLES[last.key];
+    if (!ex) return;
+    if (last.kind === "unknown") showUnknown(ex, false);
+    else if (last.kind === "gated") showGated(ex);
+    else showAnswer(ex, false);
+  }
+  function setActiveSession(id) {
+    activeSessionId = id;
+    doctorSessionId = id;
+    renderSessionSelects();
+    renderHistory();
+    displayLast(activeSession());
+    renderDoctorSheet();
+  }
+
   var gateRevealedText = {
     simple: "Some papers talk about how long people live with this illness. Numbers are small. No one can say what happens to you.",
     standard: "A small number of cohort studies report mortality outcomes in ME/CFS populations; estimates vary and samples are small, so individual prognosis cannot be inferred."
@@ -288,25 +391,63 @@
     this.setAttribute("aria-expanded", String(open));
   });
 
-  function runExample(key) {
+  function runExample(key, question, record) {
     var ex = EXAMPLES[key];
     if (!ex) return;
+    ex._key = key;
     if (ex.type === "unknown") showUnknown(ex);
     else if (ex.type === "gated") showGated(ex);
     else showAnswer(ex);
+    if (record !== false && question) recordHistory(question, ex.type === "answer" ? "answer" : ex.type, ex);
   }
   document.querySelectorAll("[data-example]").forEach(function (b) {
-    b.addEventListener("click", function () { runExample(b.getAttribute("data-example")); });
+    b.addEventListener("click", function () { runExample(b.getAttribute("data-example"), b.textContent.trim()); });
   });
   document.getElementById("ask-form").addEventListener("submit", function (e) {
     e.preventDefault();
-    var q = document.getElementById("ask-input").value.trim().toLowerCase();
+    var raw = document.getElementById("ask-input").value.trim();
+    var q = raw.toLowerCase();
     if (!q) return;
-    if (q.indexOf("cure") >= 0 || q.indexOf(" x ") >= 0) runExample("unknown");
-    else if (q.indexOf("prognos") >= 0 || q.indexOf("die") >= 0 || q.indexOf("mortality") >= 0) runExample("gated");
-    else if (q.indexOf("disagree") >= 0 || q.indexOf("conflict") >= 0) runExample("conflict");
-    else runExample("pem");
-    document.getElementById("sheet-q").textContent = document.getElementById("ask-input").value.trim();
+    if (q.indexOf("cure") >= 0 || q.indexOf(" x ") >= 0) runExample("unknown", raw);
+    else if (q.indexOf("prognos") >= 0 || q.indexOf("die") >= 0 || q.indexOf("mortality") >= 0) runExample("gated", raw);
+    else if (q.indexOf("disagree") >= 0 || q.indexOf("conflict") >= 0) runExample("conflict", raw);
+    else runExample("pem", raw);
+  });
+
+  // ---------- Session CRUD ----------
+  document.getElementById("session-select").addEventListener("change", function () {
+    setActiveSession(this.value);
+  });
+  document.getElementById("doctor-session-select").addEventListener("change", function () {
+    doctorSessionId = this.value;
+    renderDoctorSheet();
+  });
+  document.getElementById("session-new").addEventListener("click", function () {
+    var name = window.prompt("Name for the new asking session?");
+    if (!name || !name.trim()) return;
+    var s = { id: "s-" + Date.now(), title: name.trim().slice(0, 80), history: [] };
+    sessions.push(s);
+    setActiveSession(s.id);
+  });
+  document.getElementById("session-rename").addEventListener("click", function () {
+    var s = activeSession();
+    var name = window.prompt("Rename session:", s.title);
+    if (!name || !name.trim()) return;
+    s.title = name.trim().slice(0, 80);
+    renderSessionSelects();
+    renderDoctorSheet();
+  });
+  document.getElementById("session-delete").addEventListener("click", function () {
+    if (sessions.length <= 1) return;
+    var s = activeSession();
+    if (!window.confirm("Delete session “" + s.title + "”? Its history is removed; saved papers stay.")) return;
+    sessions = sessions.filter(function (x) { return x.id !== s.id; });
+    activeSessionId = sessions[0].id;
+    doctorSessionId = sessions[0].id;
+    renderSessionSelects();
+    renderHistory();
+    displayLast(activeSession());
+    renderDoctorSheet();
   });
 
   // ---------- Library ----------
@@ -332,7 +473,7 @@
     });
   }
   document.getElementById("answer-save").addEventListener("click", function () {
-    library.unshift({ title: "Saved answer (simplicity " + simplicity.value + ") — " + new Date().toISOString().slice(0, 10), detail: document.getElementById("answer-text").textContent.slice(0, 120) + "…" });
+    library.unshift({ title: "[" + activeSession().title + "] Saved answer (simplicity " + simplicity.value + ") — " + new Date().toISOString().slice(0, 10), detail: document.getElementById("answer-text").textContent.slice(0, 120) + "…" });
     renderLibrary();
     this.textContent = "Saved ✓";
     var btn = this;
@@ -363,5 +504,8 @@
   updateModeNote();
   renderChips();
   renderLibrary();
+  renderSessionSelects();
+  renderHistory();
+  renderDoctorSheet();
   render();
 })();

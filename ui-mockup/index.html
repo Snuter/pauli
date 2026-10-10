@@ -53,6 +53,7 @@
       <li class="card">
         <h2>2. What topic do you follow?</h2>
         <p>Enter <strong>1–5 buzzwords</strong>. They combine with OR, e.g. <code>myalgic encephalomyelitis</code> OR <code>PEM</code>.</p>
+        <p class="hint">These buzzwords apply globally — every asking session retrieves from the same papers.</p>
         <form id="buzz-form">
           <label for="buzz-input">Add a buzzword</label>
           <div class="row">
@@ -79,6 +80,17 @@
     <h1 id="h-ask">Ask about your saved papers</h1>
     <p class="lede">Short answers. Every fact has a paper link. <span id="mode-note">Simplicity 12: short sentences + glossary.</span></p>
 
+    <div class="card" aria-label="Asking sessions">
+      <label for="session-select">Asking session</label>
+      <div class="row">
+        <select id="session-select" aria-label="Choose asking session"></select>
+        <button type="button" id="session-new" class="secondary">New</button>
+        <button type="button" id="session-rename" class="secondary">Rename</button>
+        <button type="button" id="session-delete" class="secondary">Delete</button>
+      </div>
+      <p class="hint">Sessions share the same papers — only your prompts and history differ. Each session has its own condensed printout.</p>
+    </div>
+
     <div class="card controls" aria-label="Reading controls">
       <div class="slider-row">
         <label for="simplicity">Simplicity: <output id="simplicity-out" for="simplicity">short sentences + glossary</output></label>
@@ -103,6 +115,11 @@
     </form>
 
     <div id="answer-region" aria-live="polite" aria-atomic="false">
+      <article id="history-card" class="card" aria-label="Session history">
+        <h2>Session history</h2>
+        <ul id="history-list" class="stack"></ul>
+        <p id="history-empty" class="hint">No questions in this session yet.</p>
+      </article>
       <article id="answer-card" class="card answer" hidden>
         <h2 id="answer-heading">Answer</h2>
         <p id="answer-text"></p>
@@ -158,11 +175,16 @@
 
   <!-- DOCTOR -->
   <section id="screen-doctor" aria-labelledby="h-doctor" hidden>
-    <h1 id="h-doctor">Doctor visit sheet (1 page)</h1>
+    <h1 id="h-doctor">Doctor visit sheet (1 page per session)</h1>
     <p class="lede no-print">Preview. Printing shows only this sheet. <button type="button" id="print-btn" class="secondary">Print / save as PDF</button></p>
+    <p class="no-print">
+      <label for="doctor-session-select">Session for this sheet</label>
+      <select id="doctor-session-select" aria-label="Choose session for doctor sheet"></select>
+    </p>
     <article id="print-sheet" class="card print-sheet" aria-label="Printable one-page summary">
       <h2>My research summary for my doctor</h2>
       <dl class="sheet-grid">
+        <div><dt>Session</dt><dd id="sheet-session">ME/CFS therapies and details</dd></div>
         <div><dt>My question</dt><dd id="sheet-q">What triggers PEM?</dd></div>
         <div><dt>Short answer</dt><dd id="sheet-a">In saved papers, effort and poor sleep link to PEM. Small studies only.</dd></div>
         <div><dt>Papers</dt><dd id="sheet-c">[PMC1234567] Smith et al. 2024 · [PMC7654321] Lee et al. 2023</dd></div>

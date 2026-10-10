@@ -1,7 +1,7 @@
 ---
 type: Architecture
 title: RAG chat + anti-hallucination
-description: Rewrite-retrieve-generate pipeline with code-enforced citations and abstention.
+description: Rewrite-retrieve-generate pipeline with code-enforced citations and abstention. Sessions are UI threads over one shared corpus.
 tags: [pauli, rag]
 status: stable
 generated: {by: agent/opencode, at: 2026-10-10T00:00:00Z}
@@ -18,6 +18,8 @@ Rewrite (`pauli/questionanswering/retrieve.py`) → retrieve top-k above thresho
 Guidelines: chunks-only system prompt, no general knowledge; every factual sentence ends `[PMCID]` to Europe PMC; citations must be in retrieval set or fail closed; below-threshold / unsupported → unknown template, never guess; split no-papers / no-answer / conflicting (both cited sides, no auto contradiction detection); citation-presence, validity, abstention tests.[^tech-concept]
 
 Unknown: `I don't know from your saved papers — [what is missing, what term to add, what to ask your doctor]`.[^tech-concept]
+
+Sessions: asking sessions are presentation-layer threads only. Rewrite → retrieve → generate is identical for every session against the shared global corpus; only the user-prompt history differs. No per-session index, buzzwords, strictness, or system prompt.
 
 User view: [asking](/workflows/asking-question.md).
 

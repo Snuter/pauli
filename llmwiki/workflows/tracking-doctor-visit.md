@@ -1,7 +1,7 @@
 ---
 type: Workflow
 title: Tracking and doctor visit
-description: Follow topics, manual sync count, digest, library, 1-page print export.
+description: Follow topics, manual sync count, digest, library, per-session condensed 1-page print export.
 tags: [pauli, tracker]
 status: stable
 generated: {by: agent/opencode, at: 2026-10-10T00:00:00Z}
@@ -16,6 +16,6 @@ sources:
 * Follow topics. `Check for new papers` shows e.g. `3 new papers since 2026-09-30`.[^user-journey]
 * Weekly manual digest in plain language.[^user-journey]
 * Personal library: save answers/papers for later (low-energy friendly). Single-user local, no auth.[^user-journey]
-* Doctor export: 1-page browser print-view HTML (print to PDF) with question, short answer, citations, unknowns, suggested doctor questions.[^user-journey]
+* Doctor export: condensed 1-page browser print-view HTML (print to PDF) per asking session, with session title, short answer, citations, unknowns, suggested doctor questions.[^user-journey]
 
 [^user-journey]: P.A.U.L.I. User-Journey Concept
