@@ -4,232 +4,441 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>P.A.U.L.I. — UI mockup</title>
-<meta name="description" content="Clickable accessible mockup for P.A.U.L.I.: patient-centered research answers from Open Access papers.">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+<style>
+.layout { display: grid; grid-template-columns: 240px 1fr; gap: 1rem; max-width: 1100px; margin: 0 auto; padding: 0 1rem; }
+#session-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
+#session-list li { margin: 0; }
+#session-list button { width: 100%; text-align: left; }
+#session-list button[aria-current="true"] { font-weight: 700; }
+aside .no-print { display: flex; flex-direction: column; gap: .4rem; }
+.chat { display: flex; flex-direction: column; gap: .75rem; }
+#history-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
+#history-list li { margin: 0; }
+.q { font-weight: 600; }
+.a { margin-top: .25rem; }
+.blur { filter: blur(6px); user-select: none; pointer-events: none; }
+.gate-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
+.meta { font-size: .85rem; opacity: .8; }
+.sheet { border: 1px solid var(--pico-muted-border-color); border-radius: .5rem; padding: 1rem; }
+@media print { aside, header nav, .no-print { display: none !important; } .layout { display: block; } }
+@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+</style>
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to main content</a>
-
-<header class="site-header">
-  <div class="wrap header-inner">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true">P</span>
-      <span class="brand-text"><strong>P.A.U.L.I.</strong> <span class="brand-sub">Research info only, not medical advice</span></span>
-    </div>
-    <nav aria-label="Primary">
-      <ul class="nav-list">
-        <li><a href="#/onboarding" data-nav>Start</a></li>
-        <li><a href="#/ask" data-nav>Ask</a></li>
-        <li><a href="#/library" data-nav>Library</a></li>
-        <li><a href="#/digest" data-nav>New papers</a></li>
-        <li><a href="#/doctor" data-nav>Doctor sheet</a></li>
-        <li><a href="#/settings" data-nav>Settings</a></li>
-      </ul>
-    </nav>
-  </div>
+<header class="container">
+<nav>
+<ul><li><strong>P.A.U.L.I.</strong> <small>Patient-centered AI for Understanding Literature and Insights</small></li></ul>
+<ul>
+<li><a href="#/">Setup</a></li>
+<li><a href="#/ask">Ask</a></li>
+<li><a href="#/library">Library</a></li>
+<li><a href="#/doctor">Doctor</a></li>
+<li><a href="#/settings">Settings</a></li>
+</ul>
+</nav>
 </header>
 
+<div class="layout">
+<aside>
+<h3>Research Sessions</h3>
+<ul id="session-list"></ul>
+<div class="no-print">
+<input id="session-new" type="text" placeholder="New research session title">
+<button id="session-add" type="button">Create</button>
+<button id="session-delete" type="button" class="secondary">Delete history</button>
+</div>
+<hr>
+<p class="meta">Research info only,<br>not medical advice.</p>
+</aside>
 
+<main>
+<!-- SETUP -->
+<section id="view-setup">
+<h2>Set up P.A.U.L.I. in 2 steps</h2>
+<article>
+<h3>Step 1 — Ollama setup (once)</h3>
+<label><input type="radio" name="mode" value="local" checked> Local models (default, private, no key)</label>
+<label><input type="radio" name="mode" value="cloud"> Ollama cloud models (needs your key)</label>
+<div class="grid">
+<label>Ollama host <input id="ollama-host" type="text" value="http://localhost:11434"></label>
+<label>Chat model <input id="ollama-chat" type="text" placeholder="e.g. llama3.1:8b"></label>
+<label>API key (cloud only) <input id="ollama-key" type="password" placeholder="stored locally only"></label>
+</div>
+<p id="ollama-warn" class="meta">Without the configured model (or cloud key for cloud) the app reports misconfiguration instead of answering.</p>
+</article>
+<article>
+<h3>Step 2 — Your topic (1–5 buzzwords, OR-union)</h3>
+<form id="buzz-form" class="no-print">
+<div class="grid">
+<input id="buzz-input" type="text" placeholder="e.g. myalgic encephalomyelitis">
+<button type="submit">Add</button>
+</div>
+<p id="buzz-hint" class="meta"></p>
+</form>
+<ul id="buzz-list"></ul>
+<p class="meta">Every asking session retrieves from this same shared corpus. No built-in default topics.</p>
+<button id="buzz-fetch" type="button">Fetch open-access papers</button>
+<p id="buzz-progress" class="meta"></p>
+</article>
+</section>
 
-  <!-- ONBOARDING -->
-  <section id="screen-onboarding" aria-labelledby="h-onboarding">
-    <h1 id="h-onboarding">Set up P.A.U.L.I. in 2 steps</h1>
-    <p class="lede">Private by default. Your papers stay on this device in local mode.</p>
+<!-- ASK -->
+<section id="view-ask" hidden>
+<h2>Ask</h2>
+<div class="grid">
+<label>Research Session
+<select id="session-select"></select>
+</label>
+</div>
+<p class="meta">Multiple sessions share one corpus. Retrieval, strictness and simplicity stay global.</p>
+<div class="chat">
+<p id="history-empty">No questions yet in this session. Try: “What triggers PEM?”</p>
+<ul id="history-list"></ul>
+<form id="ask-form" role="search">
+<div class="grid">
+<input id="ask-input" type="text" placeholder="What triggers PEM?" autocomplete="off">
+<button type="submit">Ask</button>
+</div>
+</form>
+</div>
+</section>
 
-    <ol class="steps">
-      <li class="card">
-        <h2>1. Where should answers come from?</h2>
-        <fieldset>
-          <legend>Choose Ollama setup (once, changeable in Settings)</legend>
-          <label class="choice"><input type="radio" name="ollama" value="local" checked> <span><strong>Local models</strong> — private, no key needed <em>(default)</em></span></label>
-          <label class="choice"><input type="radio" name="ollama" value="cloud"> <span><strong>Ollama cloud models</strong> — needs your API key</span></label>
-        </fieldset>
-        <div id="cloud-key-wrap" hidden>
-          <label for="cloud-key">Ollama API key (stored locally only, never sent anywhere else)</label>
-          <input id="cloud-key" type="password" autocomplete="off" placeholder="ollama-…">
-        </div>
-        <p class="hint">Without the configured model (or cloud key for cloud), the app reports a setup problem instead of answering.</p>
-      </li>
-      <li class="card">
-        <h2>2. What topic do you follow?</h2>
-        <p>Enter <strong>1–5 buzzwords</strong>. They combine with OR, e.g. <code>myalgic encephalomyelitis</code> OR <code>PEM</code>.</p>
-        <p class="hint">These buzzwords apply globally — every asking session retrieves from the same papers.</p>
-        <form id="buzz-form">
-          <label for="buzz-input">Add a buzzword</label>
-          <div class="row">
-            <input id="buzz-input" type="text" placeholder="e.g. PEM" maxlength="80">
-            <button type="submit">Add</button>
-          </div>
-        </form>
-        <ul id="buzz-chips" class="chips" aria-label="Your buzzwords"></ul>
-        <p id="buzz-count" class="hint" aria-live="polite">0 of 5 buzzwords.</p>
-        <button type="button" id="buzz-check" class="secondary">Check terms in Europe PMC</button>
-        <ul id="buzz-results" class="check-list" aria-live="polite"></ul>
-        <div id="fetch-wrap" hidden>
-          <p><strong id="fetch-label">Fetching Open Access papers…</strong></p>
-          <div class="progress" role="progressbar" aria-labelledby="fetch-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="fetch-bar"><span></span></div>
-          <p class="hint">Paged and resumable. No 500-paper cap in the real app.</p>
-        </div>
-        <p><a class="btn" href="#/ask" id="to-ask">Continue to Ask →</a></p>
-      </li>
-    </ol>
-  </section>
+<!-- LIBRARY (read-only) -->
+<section id="view-library" hidden>
+<h2>Library &amp; tracking</h2>
+<article>
+<h3>Followed topics</h3>
+<ul>
+<li>myalgic encephalomyelitis, PEM</li>
+</ul>
+<button type="button" disabled>Check for new papers</button>
+<p class="meta">3 new papers since 2026-09-30</p>
+</article>
+<article>
+<h3>Weekly digest (plain language)</h3>
+<p>Two small studies on crash after effort were added. No cures reported. Details stay in your saved papers.</p>
+</article>
+<article>
+<h3>Saved for later</h3>
+<ul id="library-saved"></ul>
+<p class="meta">Saved from Ask. Single-user, local only.</p>
+</article>
+</section>
 
-  <!-- ASK -->
-  <section id="screen-ask" aria-labelledby="h-ask" hidden>
-    <h1 id="h-ask">Ask about your saved papers</h1>
-    <p class="lede">Short answers. Every fact has a paper link. <span id="mode-note">Simplicity 12: short sentences + glossary.</span></p>
+<!-- DOCTOR (read-only) -->
+<section id="view-doctor" hidden>
+<h2>Doctor visit — 1-page sheet</h2>
+<label>Research Session
+<select id="doctor-session-select"></select>
+</label>
+<article class="sheet">
+<h3 id="sheet-session">—</h3>
+<p><strong>Question:</strong> <span id="sheet-q">—</span></p>
+<p><strong>Short answer:</strong> <span id="sheet-a">—</span></p>
+<p><strong>Citations:</strong> <span id="sheet-cite">—</span></p>
+<p><strong>Unknowns:</strong> <span id="sheet-unknown">—</span></p>
+<p><strong>Ask your doctor:</strong> <span id="sheet-doctor">—</span></p>
+<p class="meta">Research info only, not medical advice. Condensed 1-page print view per session.</p>
+</article>
+<button type="button" onclick="window.print()">Print / save as PDF</button>
+</section>
 
-    <div class="card" aria-label="Asking sessions">
-      <label for="session-select">Asking session</label>
-      <div class="row">
-        <select id="session-select" aria-label="Choose asking session"></select>
-        <button type="button" id="session-new" class="secondary">New</button>
-        <button type="button" id="session-rename" class="secondary">Rename</button>
-        <button type="button" id="session-delete" class="secondary">Delete</button>
-      </div>
-      <p class="hint">Sessions share the same papers — only your prompts and history differ. Each session has its own condensed printout.</p>
-    </div>
-
-    <div class="card controls" aria-label="Reading controls">
-      <div class="slider-row">
-        <label for="simplicity">Simplicity: <output id="simplicity-out" for="simplicity">short sentences + glossary</output></label>
-        <input type="range" id="simplicity" min="10" max="15" step="1" value="12">
-      </div>
-      <p class="hint">Same papers and citations, different wording. Simplification never adds facts.</p>
-    </div>
-
-    <form id="ask-form" class="card">
-      <label for="ask-input">Your question</label>
-      <div class="row">
-        <input id="ask-input" type="text" placeholder="What triggers PEM?" maxlength="300" autocomplete="off">
-        <button type="submit">Ask</button>
-      </div>
-      <div class="examples" aria-label="Try an example">
-        <span>Try:</span>
-        <button type="button" data-example="pem">What triggers PEM?</button>
-        <button type="button" data-example="unknown">Does X cure ME/CFS?</button>
-        <button type="button" data-example="gated">Prognosis question (gated)</button>
-        <button type="button" data-example="conflict">Conflicting evidence</button>
-      </div>
-    </form>
-
-    <div id="answer-region" aria-live="polite" aria-atomic="false">
-      <article id="history-card" class="card" aria-label="Session history">
-        <h2>Session history</h2>
-        <ul id="history-list" class="stack"></ul>
-        <p id="history-empty" class="hint">No questions in this session yet.</p>
-      </article>
-      <article id="answer-card" class="card answer" hidden>
-        <h2 id="answer-heading">Answer</h2>
-        <p id="answer-text"></p>
-        <p id="answer-means" class="means" hidden></p>
-        <dl id="answer-glossary" class="glossary" hidden></dl>
-        <ul id="answer-cites" class="cites"></ul>
-        <p id="answer-unknown" class="unknown" hidden></p>
-        <div class="row">
-          <button type="button" id="answer-save" class="secondary">Save for later</button>
-          <a class="btn secondary" href="#/doctor">Make doctor sheet</a>
-        </div>
-      </article>
-
-      <article id="gate-card" class="card gate" hidden aria-labelledby="gate-heading">
-        <h2 id="gate-heading">This answer contains <span id="gate-cat">prognosis / mortality</span></h2>
-        <div id="gate-blur" class="blur" aria-hidden="true">Blurred preview — details stay hidden until you choose to show them.</div>
-        <p>Nothing reveals without your click. Simpler settings use gentler wording.</p>
-        <div class="row">
-          <button type="button" id="gate-show">Show</button>
-          <button type="button" id="gate-skip" class="secondary">Skip</button>
-          <button type="button" id="gate-why" class="secondary" aria-expanded="false">Why am I seeing this?</button>
-        </div>
-        <p id="gate-why-text" class="hint" hidden>This gate fired because retrieved papers matched a sensitive category. Change this anytime in Settings → Sensitivity.</p>
-        <article id="gate-answer" class="answer gated-answer" hidden>
-          <h3>Gated answer (revealed by you)</h3>
-          <p id="gate-answer-text"></p>
-          <ul id="gate-answer-cites" class="cites"></ul>
-        </article>
-      </article>
-    </div>
-    <p class="disclaimer" role="note"><strong>Research info only, not medical advice.</strong> <span id="crisis-line" hidden>Crisis resources: call your local emergency number, or find helplines via <span aria-label="find a helpline">findahelpline.org</span>.</span></p>
-  </section>
-
-  <!-- LIBRARY -->
-  <section id="screen-library" aria-labelledby="h-library" hidden>
-    <h1 id="h-library">Your library</h1>
-    <p class="lede">Saved answers and papers. Low-energy friendly: read later, one page at a time.</p>
-    <ul id="library-list" class="stack"></ul>
-    <p id="library-empty" class="hint">Nothing saved yet. Ask a question, then choose “Save for later”.</p>
-  </section>
-
-  <!-- DIGEST -->
-  <section id="screen-digest" aria-labelledby="h-digest" hidden>
-    <h1 id="h-digest">What is new</h1>
-    <p class="lede">You follow: <strong>myalgic encephalomyelitis OR PEM</strong></p>
-    <div class="card">
-      <button type="button" id="sync-btn">Check for new papers</button>
-      <p id="sync-result" class="sync-result" aria-live="polite">Last checked 2026-09-30.</p>
-      <h2>Weekly digest (plain language)</h2>
-      <p id="digest-text" class="hint">Press “Check for new papers” to refresh the count.</p>
-    </div>
-  </section>
-
-  <!-- DOCTOR -->
-  <section id="screen-doctor" aria-labelledby="h-doctor" hidden>
-    <h1 id="h-doctor">Doctor visit sheet (1 page per session)</h1>
-    <p class="lede no-print">Preview. Printing shows only this sheet. <button type="button" id="print-btn" class="secondary">Print / save as PDF</button></p>
-    <p class="no-print">
-      <label for="doctor-session-select">Session for this sheet</label>
-      <select id="doctor-session-select" aria-label="Choose session for doctor sheet"></select>
-    </p>
-    <article id="print-sheet" class="card print-sheet" aria-label="Printable one-page summary">
-      <h2>My research summary for my doctor</h2>
-      <dl class="sheet-grid">
-        <div><dt>Session</dt><dd id="sheet-session">ME/CFS therapies and details</dd></div>
-        <div><dt>My question</dt><dd id="sheet-q">What triggers PEM?</dd></div>
-        <div><dt>Short answer</dt><dd id="sheet-a">In saved papers, effort and poor sleep link to PEM. Small studies only.</dd></div>
-        <div><dt>Papers</dt><dd id="sheet-c">[PMC1234567] Smith et al. 2024 · [PMC7654321] Lee et al. 2023</dd></div>
-        <div><dt>What is still unknown</dt><dd id="sheet-u">Cause is unclear. Ask about pacing plans and sleep tracking.</dd></div>
-        <div><dt>Questions I want to ask</dt><dd><ol><li>Could pacing help me avoid crashes?</li><li>What should I track before our next visit?</li></ol></dd></div>
-      </dl>
-      <p class="disclaimer">Research info only, not medical advice.</p>
-    </article>
-  </section>
-
-  <!-- SETTINGS -->
-  <section id="screen-settings" aria-labelledby="h-settings" hidden>
-    <h1 id="h-settings">Settings (stored on this device)</h1>
-    <div class="card">
-      <h2>Ollama</h2>
-      <label for="set-host">Ollama host</label>
-      <input id="set-host" type="url" value="http://localhost:11434">
-      <label for="set-model">Chat model</label>
-      <input id="set-model" type="text" placeholder="e.g. llama3.1:8b">
-      <p class="hint">Missing model or cloud key = the app reports a setup problem instead of answering.</p>
-    </div>
-    <div class="card">
-      <h2>Sensitivity gating</h2>
-      <fieldset>
-        <legend>Sensitivity (stored locally, single user)</legend>
-        <label class="choice"><input type="radio" name="sensitivity" value="low"> Low — gate only suicidality / self-harm</label>
-        <label class="choice"><input type="radio" name="sensitivity" value="standard" checked> Standard — gate all 6 categories</label>
-        <label class="choice"><input type="radio" name="sensitivity" value="hide"> Hide details — title-only + double confirm</label>
-      </fieldset>
-      <div class="slider-row">
-        <label for="strictness">Retrieval strictness: <output id="strictness-out" for="strictness">30 → threshold 0.30</output></label>
-        <input type="range" id="strictness" min="0" max="100" step="1" value="30">
-      </div>
-      <p class="hint">Categories: prognosis/mortality, suicidality, severe disability, pregnancy/children, medical trauma, PEM crash risk. Retrieval uses TOP_K=15 fixed.</p>
-    </div>
-  </section>
-
+<!-- SETTINGS -->
+<section id="view-settings" hidden>
+<h2>Settings</h2>
+<article>
+<h3>Sensitivity (gating)</h3>
+<label><input type="radio" name="sensitivity" value="low"> Low — gate only suicidality/self-harm</label>
+<label><input type="radio" name="sensitivity" value="standard" checked> Standard — gate all 6 categories</label>
+<label><input type="radio" name="sensitivity" value="hide"> Hide details — title-only gate, double-confirm</label>
+<p class="meta">Categories: prognosis/mortality, suicidality, severe disability, pregnancy/children, medical trauma, PEM crash risk.</p>
+</article>
+<article>
+<h3>Retrieval strictness</h3>
+<label>Strictness <span id="strict-val">30</span>/100 <input id="strict" type="range" min="0" max="100" value="30"></label>
+<p class="meta">Threshold 0.0–0.6 (default 0.3). TOP_K=15 fixed. Separate from sensitivity.</p>
+</article>
+<article>
+<h3>Simplicity of wording</h3>
+<label>Simplicity <span id="simple-val">12</span>/15 <input id="simple" type="range" min="10" max="15" value="12"></label>
+<p id="simple-preview" class="meta"></p>
+<p class="meta">Same papers and citations, different wording. Never adds facts.</p>
+</article>
+</section>
 </main>
+</div>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <p>P.A.U.L.I. mockup — static, no data leaves your browser. <strong>Research info only, not medical advice.</strong></p>
-  </div>
-</footer>
+<script>
+(function () {
+  "use strict";
+  var SEEDS = ["ME/CFS therapies and details", "ME/CFS cure research"];
+  var KEY = "pauli.mockup.v1";
+  var state = { histories: {}, saved: [], buzz: ["myalgic encephalomyelitis", "PEM"] };
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) { var p = JSON.parse(raw); if (p && p.histories) state = p; }
+  } catch (e) {}
+  SEEDS.forEach(function (s) { if (!state.histories[s]) state.histories[s] = []; });
+  if (!Array.isArray(state.saved)) state.saved = [];
+  if (!Array.isArray(state.buzz)) state.buzz = [];
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function sessions() {
+    var out = SEEDS.slice();
+    Object.keys(state.histories).forEach(function (k) { if (out.indexOf(k) === -1) out.push(k); });
+    return out;
+  }
+  function $(id) { return document.getElementById(id); }
 
-<script src="app.js" defer></script>
+  // ---- canned answers ----
+  var PEM = {
+    kind: "cited",
+    html: "PEM (crash after effort) is most often triggered by physical exertion beyond tolerance " +
+      "<a href=\"https://europepmc.org/articles/PMC1234567\">[PMC1234567]</a>, orthostatic stress " +
+      "<a href=\"https://europepmc.org/articles/PMC2345678\">[PMC2345678]</a>, and infections " +
+      "<a href=\"https://europepmc.org/articles/PMC3456789\">[PMC3456789]</a>. " +
+      "<em>What this means:</em> too much effort can cause a delayed crash. " +
+      "Unknown: exact triggers vary by person and were studied in small groups.",
+    plain: "PEM is most often triggered by exertion [PMC1234567], orthostatic stress [PMC2345678], infections [PMC3456789]. Unknown: exact triggers vary by person.",
+    cite: "[PMC1234567] [PMC2345678] [PMC3456789]",
+    unknown: "Exact trigger thresholds per person; studied in small adult groups only.",
+    doctor: "Could my activity pattern match PEM triggers in these papers?"
+  };
+  var CURE = {
+    kind: "conflict",
+    html: "Studies disagree. One small trial reports symptom improvement with pacing programs " +
+      "<a href=\"https://europepmc.org/articles/PMC1111111\">[PMC1111111]</a>, while another finds no cure and only modest effects " +
+      "<a href=\"https://europepmc.org/articles/PMC2222222\">[PMC2222222]</a>. Both sides are shown; no contradiction detection in MVP.",
+    plain: "Studies disagree: improvement reported [PMC1111111] vs no cure found [PMC2222222].",
+    cite: "[PMC1111111] [PMC2222222]",
+    unknown: "No proven cure; long-term outcomes unclear.",
+    doctor: "Do these conflicting results change anything about my care plan?"
+  };
+  function unknown(q) {
+    return {
+      kind: "unknown",
+      html: "I don\u2019t know from your saved papers \u2014 what is missing: no matching passages; " +
+        "term to add: try a narrower buzzword; what to ask your doctor: bring this exact question.",
+      plain: "I don't know from your saved papers — no matching passages. Try a narrower buzzword.",
+      cite: "—", unknown: "No matching saved papers for: " + q,
+      doctor: "Is there any research you know on: " + q + "?"
+    };
+  }
+  var GATES = [
+    { k: ["suicid", "self-harm", "self harm"], cat: "suicidality", crisis: true },
+    { k: ["prognos", "mortal", "death", "survival"], cat: "prognosis/mortality", crisis: false },
+    { k: ["disab"], cat: "severe disability", crisis: false },
+    { k: ["pregnan", "child", "baby"], cat: "pregnancy/children", crisis: false },
+    { k: ["trauma"], cat: "medical trauma", crisis: false },
+    { k: ["crash risk", "crash"], cat: "PEM crash risk", crisis: false }
+  ];
+  function gateFor(q) {
+    var l = q.toLowerCase();
+    for (var i = 0; i < GATES.length; i++) {
+      for (var j = 0; j < GATES[i].k.length; j++) {
+        if (l.indexOf(GATES[i].k[j]) !== -1) return GATES[i];
+      }
+    }
+    return null;
+  }
+  function answerFor(q) {
+    var g = gateFor(q), l = q.toLowerCase();
+    if (g) {
+      return { kind: "gated", gate: g, inner: PEM,
+        html: PEM.html, plain: PEM.plain, cite: PEM.cite, unknown: PEM.unknown, doctor: PEM.doctor };
+    }
+    if (l.indexOf("trigger") !== -1 && l.indexOf("pem") !== -1) return PEM;
+    if (l.indexOf("pem") !== -1 && (l.indexOf("what") !== -1 || l.indexOf("?") !== -1)) return PEM;
+    if (l.indexOf("cure") !== -1) return CURE;
+    return unknown(q);
+  }
+
+  // ---- ask view ----
+  var sel = $("session-select"), list = $("history-list"), empty = $("history-empty"),
+      form = $("ask-form"), input = $("ask-input");
+  function current() { return sel.value || SEEDS[0]; }
+  function refreshSelects() {
+    var ss = sessions();
+    [sel, $("doctor-session-select")].forEach(function (s) {
+      var keep = s.value;
+      s.innerHTML = "";
+      ss.forEach(function (t) {
+        var o = document.createElement("option"); o.value = t; o.textContent = t; s.appendChild(o);
+      });
+      if (keep && ss.indexOf(keep) !== -1) s.value = keep;
+    });
+  }
+  function renderSessionList() {
+    var ul = $("session-list"); if (!ul) return;
+    ul.innerHTML = "";
+    sessions().forEach(function (t) {
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "outline"; b.textContent = t;
+      if (t === current()) b.setAttribute("aria-current", "true");
+      b.addEventListener("click", function () {
+        sel.value = t; persist();
+        if (location.hash !== "#/ask") location.hash = "#/ask";
+        renderHistory();
+      });
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  function renderHistory() {
+    var h = state.histories[current()] || [];
+    list.innerHTML = "";
+    h.forEach(function (item, idx) { list.appendChild(renderItem(item, idx)); });
+    empty.hidden = h.length !== 0;
+    renderSessionList();
+    renderDoctor(); renderLibrary();
+  }
+  function renderItem(item, idx) {
+    var li = document.createElement("li");
+    var q = document.createElement("div"); q.className = "q"; q.textContent = item.q; li.appendChild(q);
+    var a = document.createElement("div"); a.className = "a";
+    if (item.kind === "gated" && !item.revealed) {
+      var card = document.createElement("article");
+      var p = document.createElement("p");
+      p.textContent = "This answer contains " + item.gate.cat + ".";
+      var bShow = document.createElement("button"); bShow.type = "button"; bShow.textContent = "Show";
+      var bSkip = document.createElement("button"); bSkip.type = "button"; bSkip.className = "secondary"; bSkip.textContent = "Skip";
+      var bWhy = document.createElement("button"); bWhy.type = "button"; bWhy.className = "contrast outline"; bWhy.textContent = "Why am I seeing this?";
+      var why = document.createElement("p"); why.className = "meta"; why.hidden = true;
+      why.textContent = "Gated because it may mention " + item.gate.cat + ". Nothing reveals without your click.";
+      var body = document.createElement("div"); body.className = "blur"; body.innerHTML = item.html;
+      var note = document.createElement("p"); note.className = "meta";
+      note.textContent = "Research info only, not medical advice." + (item.gate.crisis ? " Crisis resources: call your local emergency number or crisis helpline." : "");
+      bShow.onclick = function () { item.revealed = true; persist(); renderHistory(); };
+      bSkip.onclick = function () { card.innerHTML = ""; var s = document.createElement("p"); s.className = "meta"; s.textContent = "Skipped gated answer (" + item.gate.cat + ")."; card.appendChild(s); };
+      bWhy.onclick = function () { why.hidden = !why.hidden; };
+      var acts = document.createElement("div"); acts.className = "gate-actions no-print";
+      acts.appendChild(bShow); acts.appendChild(bSkip); acts.appendChild(bWhy);
+      card.appendChild(p); card.appendChild(acts); card.appendChild(why); card.appendChild(body); card.appendChild(note);
+      a.appendChild(card);
+    } else {
+      var d = document.createElement("div"); d.innerHTML = item.html; a.appendChild(d);
+      var n = document.createElement("p"); n.className = "meta";
+      n.textContent = "Research info only, not medical advice."; a.appendChild(n);
+      var sv = document.createElement("button"); sv.type = "button"; sv.className = "outline no-print"; sv.textContent = "Save for later";
+      sv.onclick = function () {
+        state.saved.push({ session: current(), q: item.q });
+        persist(); renderLibrary();
+      };
+      a.appendChild(sv);
+    }
+    li.appendChild(a);
+    return li;
+  }
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var q = input.value.trim();
+    if (!q) return;
+    var ans = answerFor(q);
+    var entry = { q: q, html: ans.html, plain: ans.plain, cite: ans.cite,
+      unknown: ans.unknown, doctor: ans.doctor, kind: ans.kind,
+      gate: ans.gate || null, revealed: false };
+    state.histories[current()].push(entry);
+    persist(); input.value = "";
+    renderHistory();
+  });
+  sel.addEventListener("change", renderHistory);
+  $("session-add").addEventListener("click", function () {
+    var t = $("session-new").value.trim();
+    if (!t) return;
+    if (!state.histories[t]) state.histories[t] = [];
+    persist(); $("session-new").value = "";
+    refreshSelects(); sel.value = t;
+    if (location.hash !== "#/ask") location.hash = "#/ask";
+    renderHistory();
+  });
+  $("session-delete").addEventListener("click", function () {
+    state.histories[current()] = [];
+    persist(); renderHistory();
+  });
+
+  // ---- library (read-only) ----
+  function renderLibrary() {
+    var ul = $("library-saved"); ul.innerHTML = "";
+    if (state.saved.length === 0) {
+      var li = document.createElement("li"); li.textContent = "Nothing saved yet. Use “Save for later” in Ask.";
+      ul.appendChild(li); return;
+    }
+    state.saved.forEach(function (s) {
+      var li = document.createElement("li");
+      li.textContent = "[" + s.session + "] " + s.q;
+      ul.appendChild(li);
+    });
+  }
+
+  // ---- doctor (read-only) ----
+  function renderDoctor() {
+    var ds = $("doctor-session-select");
+    var t = ds.value || current();
+    var h = state.histories[t] || [];
+    $("sheet-session").textContent = t;
+    if (h.length) {
+      $("sheet-q").textContent = h[0].q;
+      $("sheet-a").textContent = h[0].plain || "";
+      $("sheet-cite").textContent = h[0].cite || "—";
+      $("sheet-unknown").textContent = h[0].unknown || "—";
+      $("sheet-doctor").textContent = h[0].doctor || "—";
+    } else {
+      $("sheet-q").textContent = "—";
+      $("sheet-a").textContent = "No questions in this session yet.";
+      $("sheet-cite").textContent = "—";
+      $("sheet-unknown").textContent = "—";
+      $("sheet-doctor").textContent = "—";
+    }
+  }
+  $("doctor-session-select").addEventListener("change", renderDoctor);
+
+  // ---- setup buzzwords ----
+  var BROAD = ["pain", "fatigue", "cancer", "virus", "health"];
+  function renderBuzz() {
+    var ul = $("buzz-list"); ul.innerHTML = "";
+    state.buzz.forEach(function (b) {
+      var li = document.createElement("li"); li.textContent = b; ul.appendChild(li);
+    });
+  }
+  $("buzz-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var v = $("buzz-input").value.trim(), hint = $("buzz-hint");
+    if (!v) { hint.textContent = "Empty term — type a buzzword first."; return; }
+    if (v.length < 3) { hint.textContent = "Too short — narrow-down hint: use at least 3 characters."; return; }
+    if (BROAD.indexOf(v.toLowerCase()) !== -1) { hint.textContent = "Too broad (>50k hits) — narrow it down, e.g. add a second word."; return; }
+    if (state.buzz.length >= 5) { hint.textContent = "Maximum 5 buzzwords."; return; }
+    state.buzz.push(v); persist(); $("buzz-input").value = ""; hint.textContent = "";
+    renderBuzz();
+  });
+  $("buzz-fetch").addEventListener("click", function () {
+    $("buzz-progress").textContent = "Fetching all matching open-access papers (paged, resumable)… done (mock).";
+  });
+
+  // ---- settings ----
+  function simplePreview(v) {
+    if (v <= 11) return "Preview: Very short sentences. PEM means crash after effort. What this means: rest helps.";
+    if (v >= 14) return "Preview: Longer sentences with post-exertional malaise (crash after effort) kept inline.";
+    return "Preview: Short sentences. PEM means crash after effort. Balanced wording.";
+  }
+  var simple = $("simple");
+  function renderSimple() { $("simple-val").textContent = simple.value; $("simple-preview").textContent = simplePreview(+simple.value); }
+  simple.addEventListener("input", renderSimple);
+  var strict = $("strict");
+  strict.addEventListener("input", function () { $("strict-val").textContent = strict.value; });
+  renderSimple();
+
+  // ---- router ----
+  var views = { "/": "view-setup", "/ask": "view-ask", "/library": "view-library", "/doctor": "view-doctor", "/settings": "view-settings" };
+  function route() {
+    var h = location.hash.replace(/^#/, "") || "/";
+    var id = views[h] || "view-setup";
+    Object.keys(views).forEach(function (k) { $(views[k]).hidden = views[k] !== id; });
+    if (id === "view-doctor") renderDoctor();
+  }
+  window.addEventListener("hashchange", route);
+
+  refreshSelects(); renderBuzz(); renderHistory(); renderLibrary(); route(); persist();
+})();
+</script>
 </body>
 </html>
