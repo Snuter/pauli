@@ -16,10 +16,10 @@ sources:
 
 # Glossary
 
-* PEM — post-exertional malaise (`crash after effort` in Simple mode). Example: `What triggers PEM?`[^user-journey]
+* PEM — post-exertional malaise (`crash after effort` at simpler slider settings). Example: `What triggers PEM?`[^user-journey]
 * Buzzwords — 1–5 user terms OR-unioned into one topic; e.g. `myalgic encephalomyelitis`, `PEM`.[^user-journey]
 * `PMCID` — Europe PMC citation marker ending every factual sentence.[^user-journey]
-* Simplicity slider — Simple intensity: sentence length 10–15, glossary on/off.[^user-journey]
+* Simplicity slider — wording intensity 10–15 (default 12): sentence length, glossary on/off.[^user-journey]
 * Strictness slider — `0–100` → threshold `0.0–0.6` (default `0.3`, `TOP_K=15` fixed).[^user-journey]
 * Sensitivity — `low` / `standard` / `hide details`, local single-user.[^user-journey]
 * `topic_hash` — stable hash of normalized terms; isolates vectors per topic; raw at `data/topics/<hash>/raw/`.[^tech-concept]

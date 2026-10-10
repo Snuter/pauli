@@ -19,7 +19,7 @@ Implements [RAG](/architecture/rag-chat.md) + [language](/architecture/language-
 * P1.2 `questionanswering/generate.py`: chunks-only via `ollama-python` + `OLLAMA_CHAT_MODEL`, never opencode, fail closed. Verify mocked prompt, no key in logs.[^impl-plan]
 * P1.3 `questionanswering/citations.py`: factual sentences end `[PMCID]` ∈ retrieval set. Verify presence + validity (invented rejected).[^impl-plan]
 * P1.4 `questionanswering/abstain.py`: unknown template, 3 branches, never guess. Verify `test_abstain.py`.[^impl-plan]
-* P1.5 `questionanswering/language.py`: Standard 8–10 / Simple 5–6 + simplicity slider, same citations, default Simple. Verify `textstat` + preservation.[^impl-plan]
+* P1.5 `questionanswering/language.py`: simplicity slider only (10–15, default 12), same citations. Verify `textstat` + preservation.[^impl-plan]
 * P1.6 `questionanswering/service.py`: rewrite→retrieve→generate→check→abstain→render. Verify mocked e2e incl. misconfiguration error.[^impl-plan]
 * P1.7 `web/app.py` + `routes_topics.py` + `routes_chat.py`: FastAPI + Jinja + HTMX chat, toggles + sliders + buzzword form. Verify `What triggers PEM?` → `<150` words, 3+ links or unknown.[^impl-plan]
 * P1-gate: `pytest` green, zero invented citations.[^impl-plan]

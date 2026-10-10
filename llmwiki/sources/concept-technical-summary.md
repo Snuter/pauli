@@ -25,12 +25,12 @@ OR-union query, per-term validation, full paged ingest with resume, 512/50 chunk
 
 # RAG + safety + language
 
-Rewrite→retrieve (`TOP_K=15`, `0.3` + strictness slider)→chunks-only generate→code citation/abstain gates — [RAG](/architecture/rag-chat.md). Standard/Simple + simplicity slider, `textstat`-verified — [language](/architecture/language-modes.md). Six-category keyword gate, blur card, sensitivity profiles — [safety](/architecture/safety-gating.md). Library, digest, 1-page print export — [tracker](/architecture/tracker-export.md).[^tech-concept]
+Rewrite→retrieve (`TOP_K=15`, `0.3` + strictness slider)→chunks-only generate→code citation/abstain gates — [RAG](/architecture/rag-chat.md). Simplicity slider only (10–15), `textstat`-verified — [language](/architecture/language-modes.md). Six-category keyword gate, blur card, sensitivity profiles — [safety](/architecture/safety-gating.md). Library, digest, 1-page print export — [tracker](/architecture/tracker-export.md).[^tech-concept]
 
 # Stack + phases + success criteria
 
-Hand-rolled RAG, user-configured Ollama, `pauli/` layout — [stack](/architecture/tech-stack.md). P0 cache, P1 chat, P2 warnings, P3 tracker; MVP gates: P0 real-topic fetch with cache hit + resolvable links, P1 `What triggers PEM?` → <150 words grade-appropriate 3+ Europe PMC links or explicit unknown, P2 prognosis query gates before details, P3 follow + digest + export; all verified with `pytest`.[^tech-concept]
+Hand-rolled RAG, user-configured Ollama, `pauli/` layout — [stack](/architecture/tech-stack.md). P0 cache, P1 chat, P2 warnings, P3 tracker; MVP gates: P0 real-topic fetch with cache hit + resolvable links, P1 `What triggers PEM?` → <150 words simplicity-appropriate 3+ Europe PMC links or explicit unknown, P2 prognosis query gates before details, P3 follow + digest + export; all verified with `pytest`.[^tech-concept]
 
-Success criteria (technical §9, must all hold): all factual sentences cited and resolvable to cached PMCID; zero invented citations on abstention tests; warning gate appears before gated content in both language modes; sync adds only new PMCIDs, no duplicates; readability scores meet mode targets (`textstat` Flesch-Kincaid).[^tech-concept]
+Success criteria (technical §9, must all hold): all factual sentences cited and resolvable to cached PMCID; zero invented citations on abstention tests; warning gate appears before gated content at every slider setting; sync adds only new PMCIDs, no duplicates; readability scores meet slider targets (`textstat` Flesch-Kincaid).[^tech-concept]
 
 [^tech-concept]: P.A.U.L.I. Technical Concept

@@ -16,7 +16,7 @@ sources:
 Gate categories: prognosis/mortality, suicidality, severe disability, pregnancy/children, medical trauma, PEM crash risk.[^user-journey]
 
 1. Blurred card first: `This answer contains [category] — Show / Skip / Why am I seeing this?`[^user-journey]
-2. Nothing reveals without your click. Simple mode uses gentler wording.[^user-journey]
+2. Nothing reveals without your click. Simpler slider settings use gentler wording.[^user-journey]
 3. Every gated answer shows `Research info only, not medical advice`, plus local crisis resources where relevant.[^user-journey]
 4. Sensitivity stored locally (single-user, no auth): `low` = gate only suicidality/self-harm, `standard` = gate all 6, `hide details` = title-only gate requiring double-confirm.[^user-journey] Retrieval strictness is separate: `strictness 0–100` slider → threshold `0.0–0.6` (default `0.3`, `TOP_K=15` fixed).[^user-journey]
 

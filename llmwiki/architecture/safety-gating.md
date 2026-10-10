@@ -15,7 +15,7 @@ sources:
 
 Categories: prognosis/mortality, suicidality, severe disability, pregnancy/children, medical trauma, PEM crash risk.[^tech-concept]
 
-Detector: keyword + classifier on retrieved chunks and draft answer. UI: blurred card `This answer contains [category] — Show / Skip / Why am I seeing this?`, click-to-reveal only, gentler Simple wording. Always `Research info only, not medical advice` + crisis resources where relevant.[^tech-concept] Sensitivity stored locally (single-user): `low` = suicidality/self-harm only, `standard` = all 6, `hide details` = title-only + double-confirm. Log shown/skipped (no PHI). Tests per category; gate fires in both modes.[^tech-concept]
+Detector: keyword + classifier on retrieved chunks and draft answer. UI: blurred card `This answer contains [category] — Show / Skip / Why am I seeing this?`, click-to-reveal only, gentler wording at simpler slider settings. Always `Research info only, not medical advice` + crisis resources where relevant.[^tech-concept] Sensitivity stored locally (single-user): `low` = suicidality/self-harm only, `standard` = all 6, `hide details` = title-only + double-confirm. Log shown/skipped (no PHI). Tests per category; gate fires at every slider setting.[^tech-concept]
 
 User view: [gating](/workflows/sensitive-gating.md).
 

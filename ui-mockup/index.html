@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P.A.U.L.I. — UI mockup</title>
+<meta name="description" content="Clickable accessible mockup for P.A.U.L.I.: patient-centered research answers from Open Access papers.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span class="brand-text"><strong>P.A.U.L.I.</strong> <span class="brand-sub">Research info only, not medical advice</span></span>
+    </div>
+    <nav aria-label="Primary">
+      <ul class="nav-list">
+        <li><a href="#/onboarding" data-nav>Start</a></li>
+        <li><a href="#/ask" data-nav>Ask</a></li>
+        <li><a href="#/library" data-nav>Library</a></li>
+        <li><a href="#/digest" data-nav>New papers</a></li>
+        <li><a href="#/doctor" data-nav>Doctor sheet</a></li>
+        <li><a href="#/settings" data-nav>Settings</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap text-size" role="group" aria-label="Text size">
+  <span id="text-size-label">Text size:</span>
+  <div role="group" aria-labelledby="text-size-label" class="text-size-btns">
+    <button type="button" data-font="100" aria-pressed="true">A <span class="visually-hidden">(100%)</span></button>
+    <button type="button" data-font="112" aria-pressed="false">A+ <span class="visually-hidden">(112%)</span></button>
+    <button type="button" data-font="125" aria-pressed="false">A++ <span class="visually-hidden">(125%)</span></button>
+  </div>
+</div>
+
+<main id="main" class="wrap" tabindex="-1">
+
+  <!-- ONBOARDING -->
+  <section id="screen-onboarding" aria-labelledby="h-onboarding">
+    <h1 id="h-onboarding">Set up P.A.U.L.I. in 2 steps</h1>
+    <p class="lede">Private by default. Your papers stay on this device in local mode.</p>
+
+    <ol class="steps">
+      <li class="card">
+        <h2>1. Where should answers come from?</h2>
+        <fieldset>
+          <legend>Choose Ollama setup (once, changeable in Settings)</legend>
+          <label class="choice"><input type="radio" name="ollama" value="local" checked> <span><strong>Local models</strong> — private, no key needed <em>(default)</em></span></label>
+          <label class="choice"><input type="radio" name="ollama" value="cloud"> <span><strong>Ollama cloud models</strong> — needs your API key</span></label>
+        </fieldset>
+        <div id="cloud-key-wrap" hidden>
+          <label for="cloud-key">Ollama API key (stored locally only, never sent anywhere else)</label>
+          <input id="cloud-key" type="password" autocomplete="off" placeholder="ollama-…">
+        </div>
+        <p class="hint">Without the configured model (or cloud key for cloud), the app reports a setup problem instead of answering.</p>
+      </li>
+      <li class="card">
+        <h2>2. What topic do you follow?</h2>
+        <p>Enter <strong>1–5 buzzwords</strong>. They combine with OR, e.g. <code>myalgic encephalomyelitis</code> OR <code>PEM</code>.</p>
+        <form id="buzz-form">
+          <label for="buzz-input">Add a buzzword</label>
+          <div class="row">
+            <input id="buzz-input" type="text" placeholder="e.g. PEM" maxlength="80">
+            <button type="submit">Add</button>
+          </div>
+        </form>
+        <ul id="buzz-chips" class="chips" aria-label="Your buzzwords"></ul>
+        <p id="buzz-count" class="hint" aria-live="polite">0 of 5 buzzwords.</p>
+        <button type="button" id="buzz-check" class="secondary">Check terms in Europe PMC</button>
+        <ul id="buzz-results" class="check-list" aria-live="polite"></ul>
+        <div id="fetch-wrap" hidden>
+          <p><strong id="fetch-label">Fetching Open Access papers…</strong></p>
+          <div class="progress" role="progressbar" aria-labelledby="fetch-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="fetch-bar"><span></span></div>
+          <p class="hint">Paged and resumable. No 500-paper cap in the real app.</p>
+        </div>
+        <p><a class="btn" href="#/ask" id="to-ask">Continue to Ask →</a></p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ASK -->
+  <section id="screen-ask" aria-labelledby="h-ask" hidden>
+    <h1 id="h-ask">Ask about your saved papers</h1>
+    <p class="lede">Short answers. Every fact has a paper link. <span id="mode-note">Simplicity 12: short sentences + glossary.</span></p>
+
+    <div class="card controls" aria-label="Reading controls">
+      <div class="slider-row">
+        <label for="simplicity">Simplicity: <output id="simplicity-out" for="simplicity">short sentences + glossary</output></label>
+        <input type="range" id="simplicity" min="10" max="15" step="1" value="12">
+      </div>
+      <p class="hint">Same papers and citations, different wording. Simplification never adds facts.</p>
+    </div>
+
+    <form id="ask-form" class="card">
+      <label for="ask-input">Your question</label>
+      <div class="row">
+        <input id="ask-input" type="text" placeholder="What triggers PEM?" maxlength="300" autocomplete="off">
+        <button type="submit">Ask</button>
+      </div>
+      <div class="examples" aria-label="Try an example">
+        <span>Try:</span>
+        <button type="button" data-example="pem">What triggers PEM?</button>
+        <button type="button" data-example="unknown">Does X cure ME/CFS?</button>
+        <button type="button" data-example="gated">Prognosis question (gated)</button>
+        <button type="button" data-example="conflict">Conflicting evidence</button>
+      </div>
+    </form>
+
+    <div id="answer-region" aria-live="polite" aria-atomic="false">
+      <article id="answer-card" class="card answer" hidden>
+        <h2 id="answer-heading">Answer</h2>
+        <p id="answer-text"></p>
+        <p id="answer-means" class="means" hidden></p>
+        <dl id="answer-glossary" class="glossary" hidden></dl>
+        <ul id="answer-cites" class="cites"></ul>
+        <p id="answer-unknown" class="unknown" hidden></p>
+        <div class="row">
+          <button type="button" id="answer-save" class="secondary">Save for later</button>
+          <a class="btn secondary" href="#/doctor">Make doctor sheet</a>
+        </div>
+      </article>
+
+      <article id="gate-card" class="card gate" hidden aria-labelledby="gate-heading">
+        <h2 id="gate-heading">This answer contains <span id="gate-cat">prognosis / mortality</span></h2>
+        <div id="gate-blur" class="blur" aria-hidden="true">Blurred preview — details stay hidden until you choose to show them.</div>
+        <p>Nothing reveals without your click. Simpler settings use gentler wording.</p>
+        <div class="row">
+          <button type="button" id="gate-show">Show</button>
+          <button type="button" id="gate-skip" class="secondary">Skip</button>
+          <button type="button" id="gate-why" class="secondary" aria-expanded="false">Why am I seeing this?</button>
+        </div>
+        <p id="gate-why-text" class="hint" hidden>This gate fired because retrieved papers matched a sensitive category. Change this anytime in Settings → Sensitivity.</p>
+        <article id="gate-answer" class="answer gated-answer" hidden>
+          <h3>Gated answer (revealed by you)</h3>
+          <p id="gate-answer-text"></p>
+          <ul id="gate-answer-cites" class="cites"></ul>
+        </article>
+      </article>
+    </div>
+    <p class="disclaimer" role="note"><strong>Research info only, not medical advice.</strong> <span id="crisis-line" hidden>Crisis resources: call your local emergency number, or find helplines via <span aria-label="find a helpline">findahelpline.org</span>.</span></p>
+  </section>
+
+  <!-- LIBRARY -->
+  <section id="screen-library" aria-labelledby="h-library" hidden>
+    <h1 id="h-library">Your library</h1>
+    <p class="lede">Saved answers and papers. Low-energy friendly: read later, one page at a time.</p>
+    <ul id="library-list" class="stack"></ul>
+    <p id="library-empty" class="hint">Nothing saved yet. Ask a question, then choose “Save for later”.</p>
+  </section>
+
+  <!-- DIGEST -->
+  <section id="screen-digest" aria-labelledby="h-digest" hidden>
+    <h1 id="h-digest">What is new</h1>
+    <p class="lede">You follow: <strong>myalgic encephalomyelitis OR PEM</strong></p>
+    <div class="card">
+      <button type="button" id="sync-btn">Check for new papers</button>
+      <p id="sync-result" class="sync-result" aria-live="polite">Last checked 2026-09-30.</p>
+      <h2>Weekly digest (plain language)</h2>
+      <p id="digest-text" class="hint">Press “Check for new papers” to refresh the count.</p>
+    </div>
+  </section>
+
+  <!-- DOCTOR -->
+  <section id="screen-doctor" aria-labelledby="h-doctor" hidden>
+    <h1 id="h-doctor">Doctor visit sheet (1 page)</h1>
+    <p class="lede no-print">Preview. Printing shows only this sheet. <button type="button" id="print-btn" class="secondary">Print / save as PDF</button></p>
+    <article id="print-sheet" class="card print-sheet" aria-label="Printable one-page summary">
+      <h2>My research summary for my doctor</h2>
+      <dl class="sheet-grid">
+        <div><dt>My question</dt><dd id="sheet-q">What triggers PEM?</dd></div>
+        <div><dt>Short answer</dt><dd id="sheet-a">In saved papers, effort and poor sleep link to PEM. Small studies only.</dd></div>
+        <div><dt>Papers</dt><dd id="sheet-c">[PMC1234567] Smith et al. 2024 · [PMC7654321] Lee et al. 2023</dd></div>
+        <div><dt>What is still unknown</dt><dd id="sheet-u">Cause is unclear. Ask about pacing plans and sleep tracking.</dd></div>
+        <div><dt>Questions I want to ask</dt><dd><ol><li>Could pacing help me avoid crashes?</li><li>What should I track before our next visit?</li></ol></dd></div>
+      </dl>
+      <p class="disclaimer">Research info only, not medical advice.</p>
+    </article>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="screen-settings" aria-labelledby="h-settings" hidden>
+    <h1 id="h-settings">Settings (stored on this device)</h1>
+    <div class="card">
+      <h2>Ollama</h2>
+      <label for="set-host">Ollama host</label>
+      <input id="set-host" type="url" value="http://localhost:11434">
+      <label for="set-model">Chat model</label>
+      <input id="set-model" type="text" placeholder="e.g. llama3.1:8b">
+      <p class="hint">Missing model or cloud key = the app reports a setup problem instead of answering.</p>
+    </div>
+    <div class="card">
+      <h2>Sensitivity gating</h2>
+      <fieldset>
+        <legend>Sensitivity (stored locally, single user)</legend>
+        <label class="choice"><input type="radio" name="sensitivity" value="low"> Low — gate only suicidality / self-harm</label>
+        <label class="choice"><input type="radio" name="sensitivity" value="standard" checked> Standard — gate all 6 categories</label>
+        <label class="choice"><input type="radio" name="sensitivity" value="hide"> Hide details — title-only + double confirm</label>
+      </fieldset>
+      <div class="slider-row">
+        <label for="strictness">Retrieval strictness: <output id="strictness-out" for="strictness">30 → threshold 0.30</output></label>
+        <input type="range" id="strictness" min="0" max="100" step="1" value="30">
+      </div>
+      <p class="hint">Categories: prognosis/mortality, suicidality, severe disability, pregnancy/children, medical trauma, PEM crash risk. Retrieval uses TOP_K=15 fixed.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>P.A.U.L.I. mockup — static, no data leaves your browser. <strong>Research info only, not medical advice.</strong></p>
+  </div>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>
