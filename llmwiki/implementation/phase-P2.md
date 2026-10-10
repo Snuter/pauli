@@ -19,6 +19,6 @@ Implements [safety gating](/architecture/safety-gating.md).[^impl-plan]
 * P2.2 `safety/gate.py` + `resources.py`: blur card Show/Skip/Why, simpler-slider wording, advice disclaimer + crisis resources, `low`/`standard`/`hide details` local. Verify across slider range parametrized.[^impl-plan]
 * P2.3 `safety/events.py`: shown/skipped log, category+action only. Verify no query text.[^impl-plan]
 * P2.4 Wire into `service.py` + template before details. Verify manual prognosis query gates at every slider setting.[^impl-plan]
-* P2-gate: `test_warnings.py` green, gate precedes content.[^impl-plan]
+* P2-gate: `test_warnings.py` green, gate precedes content (unit + `tests/ui/` playwright assertion).[^impl-plan]
 
 [^impl-plan]: P.A.U.L.I. Implementation Plan

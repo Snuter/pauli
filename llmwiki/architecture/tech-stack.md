@@ -17,6 +17,6 @@ Backend FastAPI, SQLite + sqlite-vec, Ollama embeddings. Hand-rolled RAG only (n
 
 LLM: user-configured Ollama local/cloud. `OLLAMA_HOST` (default `http://localhost:11434`), `OLLAMA_CHAT_MODEL` / `OLLAMA_EMBED_MODEL` (no shipped chat default), `OLLAMA_API_KEY` cloud-only via env/gitignored `.env`, never logged. Fail closed on missing model/key. `setup_dev_ai.sh` is dev-only, not runtime. Local keeps queries on-machine; cloud follows provider terms; retrieval stays local.[^tech-concept]
 
-Layout: `pauli/ingest/`, `pauli/index/`, `pauli/questionanswering/`, `pauli/safety/`, `pauli/web/`, `data/`, `tests/`. MVP: local web app + RAG, Python >=3.13, Poetry, pytest; OA-only compliance.[^tech-concept]
+Layout: `pauli/ingest/`, `pauli/index/`, `pauli/questionanswering/`, `pauli/safety/`, `pauli/web/`, `data/`, `tests/` (unit/integration) + `tests/ui/` (python-playwright UI). MVP: local web app + RAG, Python >=3.13, Poetry, pytest + `playwright`/`pytest-playwright` dev deps; OA-only compliance.[^tech-concept] Test layers, commands, conventions — [testing strategy](/architecture/testing.md).
 
 [^tech-concept]: P.A.U.L.I. Technical Concept

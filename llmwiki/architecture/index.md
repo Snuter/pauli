@@ -6,3 +6,4 @@
 * [Safety Gating](safety-gating.md) - 6 categories, detector, blur card, sensitivity, logging.
 * [Tracker Export](tracker-export.md) - Library, digest, 1-page print HTML.
 * [Tech Stack](tech-stack.md) - FastAPI/HTMX, sqlite-vec, hand-rolled RAG, Ollama config, layout.
+* [Testing Strategy](testing.md) - pytest unit/integration + python-playwright UI, layout, commands.

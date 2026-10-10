@@ -13,6 +13,16 @@ The user chooses local models (private, no key) or Ollama cloud models
 - `OLLAMA_API_KEY` only for Ollama cloud; empty for local. Set it in the
   environment or a local `.env` file (gitignored). Never logged or committed.
 
+## UI tests (python-playwright + pytest-playwright)
+
+UI tests live in `tests/ui/` and run against the static `ui-mockup/`.
+
+```bash
+poetry install --with dev
+poetry run python -m playwright install chromium
+poetry run pytest tests/ui -v
+```
+
 ## Development tooling (dev-only)
 
 `setup_dev_ai.sh` is only for developing this project. It installs Ollama +
