@@ -15,7 +15,7 @@ sources:
 
 Derived from [technical](/sources/concept-technical-summary.md) + [user-journey](/sources/concept-user-journey-summary.md) concepts. Stack: Python >=3.13, Poetry, pytest + python-playwright (`pytest-playwright`), FastAPI + Jinja + HTMX only, SQLite + sqlite-vec, user-configured Ollama. Each step is one unit of work with `Verify:` criteria; run `poetry run pytest tests/<file>` after each code step (`tests/ui` for UI steps) — full layers in [testing strategy](/architecture/testing.md).[^impl-plan]
 
-Constraints: no default topics; OA-only; weekly manual sync, no cron; single-user no auth; fetch all matches paged + resumable; missing model/key is hard misconfiguration. `setup_dev_ai.sh` dev-only, never runtime; no shipped model or key.[^impl-plan]
+Constraints: no default topics; OA-only; scheduled in-app sync+notify (cadence setting, weekly default), send-only-on-update; single-user no auth; fetch all matches paged + resumable; missing model/key is hard misconfiguration. `setup_dev_ai.sh` dev-only, never runtime; no shipped model, key, or SMTP secret.[^impl-plan]
 
 # Phases
 

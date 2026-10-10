@@ -17,9 +17,9 @@ Rewrite (`pauli/questionanswering/retrieve.py`) → retrieve top-k above thresho
 
 Guidelines: chunks-only system prompt, no general knowledge; every factual sentence ends `[PMCID]` to Europe PMC; citations must be in retrieval set or fail closed; below-threshold / unsupported → unknown template, never guess; split no-papers / no-answer / conflicting (both cited sides, no auto contradiction detection); citation-presence, validity, abstention tests.[^tech-concept]
 
-Unknown: `I don't know from your saved papers — [what is missing, what term to add, what to ask your doctor]`.[^tech-concept]
+Unknown: `I don't know from your cached papers — [what is missing, what term to add, what to ask your doctor]`.[^tech-concept]
 
-Sessions: asking sessions are presentation-layer threads only. Rewrite → retrieve → generate is identical for every session against the shared global corpus; only the user-prompt history differs. No per-session index, buzzwords, strictness, or system prompt.
+Sessions: asking sessions are presentation-layer threads only. Rewrite → retrieve → generate is identical for every session against the shared global corpus; only the user-prompt history differs. No per-session index, buzzwords, strictness, or system prompt. The daily notify job only *reads* each session's history for matching — it never forks the corpus.
 
 User view: [asking](/workflows/asking-question.md).
 

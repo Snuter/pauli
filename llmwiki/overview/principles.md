@@ -13,12 +13,12 @@ sources:
 
 # Principles
 
-* Low energy / brain fog: short answers, save-for-later, simplest wording by default (simplicity 12).[^user-journey]
+* Low energy / brain fog: short answers, auto-saved session history, simplest wording by default (simplicity 12).[^user-journey]
 * Uncertainty: show what is known / unknown / in whom it was studied.[^user-journey]
 * Trust: every factual claim has a citation back to Europe PMC. No invented details.[^user-journey]
 * Honesty: system states when it does not know — see [asking](/workflows/asking-question.md).[^user-journey]
 * Safety: gated trigger warnings before critical content — see [gating](/workflows/sensitive-gating.md).[^user-journey]
-* Continuity: follow topics, see what is new, print a 1-page summary for doctor visits — see [tracking](/workflows/tracking-doctor-visit.md).[^user-journey]
+* Continuity: scheduled email shows what is new per session, print a 1-page summary for doctor visits — see [tracking](/workflows/tracking-doctor-visit.md).[^user-journey]
 
 What good looks like: short readable answers, gate before sensitive details at every slider setting, explicit unknowns, new-only sync, one-page printout.[^user-journey]
 

@@ -39,6 +39,6 @@ Role-based locators (`get_by_role`) over CSS where possible; `exact=True` on amb
 * P0 cache/search: mocked-HTTP unit tests (paging, PMCID dedup); gate adds real-fetch manual check + `pytest` green.[^impl-plan]
 * P1 RAG chat: citation/abstain/language unit tests + playwright smoke on ask → answer → citation links.[^impl-plan]
 * P2 warnings: per-category detector tests, slider-parametrized gate tests, UI assertion that the gate precedes content.[^impl-plan]
-* P3 tracker: library/digest/export unit tests; gate is full `pytest` green + manual export review.[^impl-plan]
+* P3 tracker: scheduler/notify/export unit tests; gate is full `pytest` green + manual export review.[^impl-plan]
 
 [^impl-plan]: P.A.U.L.I. Implementation Plan

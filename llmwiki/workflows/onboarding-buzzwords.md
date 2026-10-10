@@ -22,13 +22,14 @@ All first-run setup and all preference controls live on one Settings screen — 
 3. App checks each term against Europe PMC: empty, too short, or too broad (`>50k` hits) gets a narrow-down hint.[^user-journey]
 4. Valid topic fetches all matching Open Access papers (no 500-paper cap; paged with progress, resumable). Answers come from your configured Ollama model; cached papers stay local (local mode) or follow Ollama cloud terms (cloud mode).[^user-journey]
 
-No built-in default topics — library starts from what you enter.[^user-journey]
+No built-in default topics — the corpus starts from what you enter.[^user-journey]
 
 ## Preferences (same screen)
 
 * Sensitivity (gating): `low / standard / hide details` — see [gating](/workflows/sensitive-gating.md).
 * Retrieval strictness: `0–100` slider → threshold `0.0–0.6` (default `0.3`, `TOP_K=15` fixed) — see [gating](/workflows/sensitive-gating.md).
 * Simplicity of wording: `10–15` slider (default `12`) — see [language](/workflows/language-toggle.md).
+* Updates (email): check cadence (once a week by default), recipient + sender/SMTP fields; one combined email per check, sent only when new papers match a session; failures shown loudly — see [tracking](/workflows/tracking-doctor-visit.md).
 
 Next: [ask a question](/workflows/asking-question.md).
 

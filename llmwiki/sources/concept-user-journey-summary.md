@@ -29,7 +29,7 @@ Low energy, uncertainty, trust, honesty, safety, continuity — simplest wording
 * Asking: short `<150`-word cited answers or honest unknown with 3-way split — [asking](../workflows/asking-question.md).
 * Simplicity slider only (10–15), same citations — [language](../workflows/language-toggle.md).
 * Six gated categories, blur card, sensitivity profiles — [gating](../workflows/sensitive-gating.md).
-* Follow topics, manual digest, library, 1-page doctor printout — [tracking](../workflows/tracking-doctor-visit.md).
+* Scheduled checks, per-session email digest, auto-persisted sessions, 1-page doctor printout — [tracking](../workflows/tracking-doctor-visit.md).
 
 # Good looks like
 

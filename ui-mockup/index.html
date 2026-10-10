@@ -43,7 +43,6 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 <nav>
 <ul><li><strong>P.A.U.L.I.</strong> <small>Patient-centered AI for Understanding Literature and Insights</small></li></ul>
 <ul>
-<li><a href="#/library"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Library</a></li>
 <li><a href="#/settings"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h10M18 8h2M4 16h4M12 16h8"/><circle cx="16" cy="8" r="2"/><circle cx="10" cy="16" r="2"/></svg>Settings</a></li>
 </ul>
 </nav>
@@ -110,6 +109,23 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 <p id="simple-preview" class="meta"></p>
 <p class="meta">Same papers and citations, different wording. Never adds facts.</p>
 </article>
+<article>
+<h3>Updates (email)</h3>
+<div class="grid">
+<label>Notify to <input id="mail-to" type="email" placeholder="you@example.org" autocomplete="off"></label>
+<label>SMTP host <input id="mail-smtp" type="text" placeholder="e.g. localhost:1025" autocomplete="off"></label>
+<label>Sender <input id="mail-from" type="email" placeholder="pauli@localhost" autocomplete="off"></label>
+</div>
+<label>Check for new papers
+<select id="mail-freq">
+<option value="weekly" selected>Once a week</option>
+<option value="daily">Once a day</option>
+<option value="monthly">Once a month</option>
+</select>
+</label>
+<p id="mail-status" class="meta"></p>
+<p class="meta">One combined email per check, and only when new papers match a session (same strictness/TOP_K=15, new papers only). Delivery failures are shown here. Single-user, local only.</p>
+</article>
 </section>
 
 <!-- ASK -->
@@ -130,28 +146,6 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 </div>
 </form>
 </div>
-</section>
-
-<!-- LIBRARY (read-only) -->
-<section id="view-library" hidden>
-<h2>Library &amp; tracking</h2>
-<article>
-<h3>Followed topics</h3>
-<ul>
-<li>myalgic encephalomyelitis, PEM</li>
-</ul>
-<button type="button" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>Check for new papers</button>
-<p class="meta">3 new papers since 2026-09-30</p>
-</article>
-<article>
-<h3>Weekly digest (plain language)</h3>
-<p>Two small studies on crash after effort were added. No cures reported. Details stay in your saved papers.</p>
-</article>
-<article>
-<h3>Saved for later</h3>
-<ul id="library-saved"></ul>
-<p class="meta">Saved from Ask. Single-user, local only.</p>
-</article>
 </section>
 
 </main>
@@ -191,16 +185,17 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 (function () {
   "use strict";
   var SEEDS = ["ME/CFS therapies and details", "ME/CFS cure research"];
-  var KEY = "pauli.mockup.v1";
-  var state = { histories: {}, saved: [], buzz: ["myalgic encephalomyelitis", "PEM"] };
+  var KEY = "pauli.mockup.v2";
+  var state = { histories: {}, buzz: ["myalgic encephalomyelitis", "PEM"], mail: { to: "", smtp: "", from: "", freq: "weekly" } };
   var seeded = false;
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) { var p = JSON.parse(raw); if (p && p.histories) { state = p; seeded = true; } }
   } catch (e) {}
   if (!seeded) SEEDS.forEach(function (s) { if (!state.histories[s]) state.histories[s] = []; });
-  if (!Array.isArray(state.saved)) state.saved = [];
   if (!Array.isArray(state.buzz)) state.buzz = [];
+  if (!state.mail || typeof state.mail !== "object") state.mail = { to: "", smtp: "", from: "", freq: "weekly" };
+  if (["weekly", "daily", "monthly"].indexOf(state.mail.freq) === -1) state.mail.freq = "weekly";
   if (!state.current || !state.histories[state.current]) state.current = sessions()[0] || null;
   function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   function sessions() {
@@ -212,7 +207,6 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
     eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
     skip: '<path d="M5 4l10 8-10 8zM19 4v16"/>',
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 11v5M12 8v.1"/>',
-    bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>',
     trash: '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/>',
     printer: '<path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/>'
   };
@@ -257,10 +251,10 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
   function unknown(q) {
     return {
       kind: "unknown",
-      html: "I don\u2019t know from your saved papers \u2014 what is missing: no matching passages; " +
+      html: "I don\u2019t know from your cached papers \u2014 what is missing: no matching passages; " +
         "term to add: try a narrower buzzword; what to ask your doctor: bring this exact question.",
-      plain: "I don't know from your saved papers — no matching passages. Try a narrower buzzword.",
-      cite: "—", unknown: "No matching saved papers for: " + q,
+      plain: "I don't know from your cached papers — no matching passages. Try a narrower buzzword.",
+      cite: "—", unknown: "No matching cached papers for: " + q,
       doctor: "Is there any research you know on: " + q + "?"
     };
   }
@@ -329,7 +323,6 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
     var askTitle = $("ask-title");
     if (askTitle) askTitle.textContent = t || "No session yet";
     renderSessionList();
-    renderLibrary();
   }
   function renderItem(item, idx) {
     var li = document.createElement("li");
@@ -361,13 +354,6 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
       var d = document.createElement("div"); d.innerHTML = item.html; a.appendChild(d);
       var n = document.createElement("p"); n.className = "meta";
       n.textContent = "Research info only, not medical advice."; a.appendChild(n);
-      var sv = document.createElement("button"); sv.type = "button"; sv.className = "outline no-print";
-      sv.appendChild(makeIcon("bookmark")); sv.appendChild(document.createTextNode("Save for later"));
-      sv.onclick = function () {
-        state.saved.push({ session: current(), q: item.q });
-        persist(); renderLibrary();
-      };
-      a.appendChild(sv);
     }
     li.appendChild(a);
     return li;
@@ -406,7 +392,6 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
     var t = current();
     if (t) {
       delete state.histories[t];
-      state.saved = state.saved.filter(function (s) { return s.session !== t; });
       var rest = sessions();
       state.current = rest.length ? rest[0] : null;
       persist(); renderHistory();
@@ -421,20 +406,6 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
   });
   $("doctor-close").addEventListener("click", function () { $("doctor-dialog").close(); });
   $("doctor-print").addEventListener("click", function () { window.print(); });
-
-  // ---- library (read-only) ----
-  function renderLibrary() {
-    var ul = $("library-saved"); ul.innerHTML = "";
-    if (state.saved.length === 0) {
-      var li = document.createElement("li"); li.textContent = "Nothing saved yet. Use “Save for later” in Ask.";
-      ul.appendChild(li); return;
-    }
-    state.saved.forEach(function (s) {
-      var li = document.createElement("li");
-      li.textContent = "[" + s.session + "] " + s.q;
-      ul.appendChild(li);
-    });
-  }
 
   // ---- doctor dialog (read-only, current Ask session) ----
   function renderDoctorDialog() {
@@ -479,6 +450,26 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
   });
 
   // ---- settings ----
+  function renderMail() {
+    var m = state.mail || { to: "", smtp: "", from: "", freq: "weekly" };
+    if ($("mail-to")) $("mail-to").value = m.to || "";
+    if ($("mail-smtp")) $("mail-smtp").value = m.smtp || "";
+    if ($("mail-from")) $("mail-from").value = m.from || "";
+    if ($("mail-freq")) $("mail-freq").value = (["weekly", "daily", "monthly"].indexOf(m.freq) !== -1 ? m.freq : "weekly");
+    if ($("mail-status")) $("mail-status").textContent = m.to ? "" : "No address set — no email is sent.";
+  }
+  ["mail-to", "mail-smtp", "mail-from", "mail-freq"].forEach(function (id) {
+    var el = $(id);
+    if (el) el.addEventListener("change", function () {
+      state.mail = {
+        to: $("mail-to") ? $("mail-to").value.trim() : "",
+        smtp: $("mail-smtp") ? $("mail-smtp").value.trim() : "",
+        from: $("mail-from") ? $("mail-from").value.trim() : "",
+        freq: ($("mail-freq") && ["weekly", "daily", "monthly"].indexOf($("mail-freq").value) !== -1) ? $("mail-freq").value : "weekly"
+      };
+      persist(); renderMail();
+    });
+  });
   function simplePreview(v) {
     if (v <= 11) return "Preview: Very short sentences. PEM means crash after effort. What this means: rest helps.";
     if (v >= 14) return "Preview: Longer sentences with post-exertional malaise (crash after effort) kept inline.";
@@ -492,7 +483,7 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
   renderSimple();
 
   // ---- router ----
-  var views = { "/": "view-settings", "/ask": "view-ask", "/library": "view-library", "/settings": "view-settings" };
+  var views = { "/": "view-settings", "/ask": "view-ask", "/settings": "view-settings" };
   function route() {
     var h = location.hash.replace(/^#/, "") || "/";
     var id = views[h] || "view-settings";
@@ -500,7 +491,7 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
   }
   window.addEventListener("hashchange", route);
 
-  renderBuzz(); renderHistory(); renderLibrary(); route(); persist();
+  renderBuzz(); renderMail(); renderHistory(); route(); persist();
 })();
 </script>
 </body>
