@@ -25,7 +25,7 @@ Low energy, uncertainty, trust, honesty, safety, continuity — simplest wording
 
 # Journeys
 
-* Onboarding with 1–5 buzzwords, OR-union topic, per-term validation, full OA fetch — [onboarding](../workflows/onboarding-buzzwords.md).
+* Unified Settings (Ollama setup, 1–5 buzzwords OR-union topic, per-term validation, full OA fetch, plus sensitivity/strictness/simplicity) — [settings](../workflows/onboarding-buzzwords.md).
 * Asking: short `<150`-word cited answers or honest unknown with 3-way split — [asking](../workflows/asking-question.md).
 * Simplicity slider only (10–15), same citations — [language](../workflows/language-toggle.md).
 * Six gated categories, blur card, sensitivity profiles — [gating](../workflows/sensitive-gating.md).

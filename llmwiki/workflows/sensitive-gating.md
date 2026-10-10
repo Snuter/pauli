@@ -15,6 +15,8 @@ sources:
 
 Gate categories: prognosis/mortality, suicidality, severe disability, pregnancy/children, medical trauma, PEM crash risk.[^user-journey]
 
+Sensitivity and retrieval-strictness sliders both live on the unified Settings screen alongside Ollama setup, buzzwords, and simplicity (see [settings](/workflows/onboarding-buzzwords.md)).
+
 1. Blurred card first: `This answer contains [category] — Show / Skip / Why am I seeing this?`[^user-journey]
 2. Nothing reveals without your click. Simpler slider settings use gentler wording.[^user-journey]
 3. Every gated answer shows `Research info only, not medical advice`, plus local crisis resources where relevant.[^user-journey]

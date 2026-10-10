@@ -3,11 +3,13 @@
 import re
 
 
-def test_onboarding_visible_by_default(page, mockup_url):
+def test_settings_visible_by_default(page, mockup_url):
     page.goto(mockup_url)
-    heading = page.get_by_role("heading", name="Set up P.A.U.L.I. in 2 steps")
+    heading = page.get_by_role("heading", name="Settings — setup and preferences")
     heading.wait_for()
     assert heading.is_visible()
+    for name in ["Ollama setup", "Your topic", "Sensitivity (gating)", "Retrieval strictness", "Simplicity of wording"]:
+        assert page.get_by_role("heading", name=name).is_visible()
 
 
 def test_sessions_seeded(page, mockup_url):

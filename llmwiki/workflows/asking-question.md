@@ -20,9 +20,9 @@ sources:
 
 ## Asking sessions
 
-* Multiple asking sessions share one global corpus (see [onboarding](/workflows/onboarding-buzzwords.md)). Only the user prompts / history differentiate sessions — no per-session system prompt, retrieval config, or buzzwords.
+* Multiple asking sessions share one global corpus (see [settings](/workflows/onboarding-buzzwords.md)). Only the user prompts / history differentiate sessions — no per-session system prompt, retrieval config, or buzzwords.
 * Sessions are freely user-creatable (create / rename / delete). Seed examples: `ME/CFS therapies and details`, `ME/CFS cure research`. No other defaults.
-* Each session keeps its own Q&A history. Retrieval, strictness, and simplicity stay global.
+* Each session keeps its own Q&A history. Retrieval, strictness, and simplicity live under Settings and stay global.
 * Each session gets its own condensed 1-page printout (see [tracking](/workflows/tracking-doctor-visit.md)).
 
 Related: [language](/workflows/language-toggle.md), [gating](/workflows/sensitive-gating.md).

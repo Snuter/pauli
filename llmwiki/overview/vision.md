@@ -19,6 +19,6 @@ Primary user: person living with a chronic / rare condition (e.g. ME/CFS, fatigu
 
 Non-goals: diagnosis, treatment recommendation, symptom triage. Research information only, not medical advice.[^user-journey]
 
-Related: [principles](/overview/principles.md), [onboarding](/workflows/onboarding-buzzwords.md).
+Related: [principles](/overview/principles.md), [settings](/workflows/onboarding-buzzwords.md).
 
 [^user-journey]: P.A.U.L.I. User-Journey Concept

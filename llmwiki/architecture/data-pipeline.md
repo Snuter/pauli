@@ -19,6 +19,6 @@ sources:
 4. Index: chunk abstracts/sections (~512 tokens, 50 overlap), embed via user-configured Ollama (`pauli/index/embed.py`, `OLLAMA_EMBED_MODEL` default `nomic-embed-text`; `sentence-transformers/all-MiniLM-L6-v2` offline alternative). Vectors in sqlite-vec with PMCID, title, year, authors, Europe PMC URL, `topic_hash`.[^tech-concept]
 5. Sync per-topic `last_sync`: `Check for new papers` queries `FIRST_PDATE:[last_sync TO NOW]`. Dedup by PMCID, append-only, re-embed new chunks. UI shows `3 new papers since 2026-09-30`.[^tech-concept]
 
-User view: [onboarding](/workflows/onboarding-buzzwords.md), [tracking](/workflows/tracking-doctor-visit.md).
+User view: [settings](/workflows/onboarding-buzzwords.md), [tracking](/workflows/tracking-doctor-visit.md).
 
 [^tech-concept]: P.A.U.L.I. Technical Concept
