@@ -13,7 +13,7 @@ sources:
 
 # Testing strategy
 
-Two layers. Unit/integration: `pytest` over `tests/test_*.py` with mocked HTTP (Europe PMC) and mocked Ollama vectors/generation; each [implementation](/implementation/index.md) step names its `Verify:` test.[^impl-plan] UI: `python-playwright` via `pytest-playwright` over `tests/ui/` against the static `ui-mockup/` (Chromium `page` fixture, session `mockup_url` file-URL fixture); seed coverage is `test_mockup_smoke.py` — settings (unified setup + preferences) visible by default, nav to Ask, example answer renders with resolvable Europe PMC citation links, sessions driven by the sidebar list (Ask shows the active session name plus two side-by-side icon buttons below the title for doctor-summary dialog and modal-confirmed delete; no Doctor nav item, no sidebar delete button, no per-view dropdowns).
+Two layers. Unit/integration: `pytest` over `tests/test_*.py` with mocked HTTP (Europe PMC) and mocked Ollama vectors/generation; each [implementation](/implementation/index.md) step names its `Verify:` test.[^impl-plan] UI: `python-playwright` via `pytest-playwright` over `tests/ui/` against the static `ui-mockup/` (Chromium `page` fixture, session `mockup_url` file-URL fixture); seed coverage is `test_mockup_smoke.py` — settings (unified setup + preferences) visible by default, nav to Ask, example answer renders with resolvable Europe PMC citation links, sessions driven by the sidebar list (Ask heading is the active session title, `No session yet` when empty, plus two side-by-side icon buttons below the title for doctor-summary dialog and modal-confirmed delete; no Doctor nav item, no sidebar delete button, no per-view dropdowns).
 
 # Layout + deps
 

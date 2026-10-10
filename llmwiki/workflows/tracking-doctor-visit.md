@@ -16,6 +16,6 @@ sources:
 * Follow topics. `Check for new papers` shows e.g. `3 new papers since 2026-09-30`.[^user-journey]
 * Weekly manual digest in plain language.[^user-journey]
 * Personal library: save answers/papers for later (low-energy friendly). Single-user local, no auth.[^user-journey]
-* Doctor export: condensed 1-page dialog in Ask (`#doctor-dialog`: session title, short answer, citations, unknowns, suggested doctor questions, Print / save as PDF) per asking session, opened from the `Doctor summary / print` button below the `Ask` title.[^user-journey] It always shows the current Ask session — no top-nav Doctor entry, no separate picker.
+* Doctor export: condensed 1-page dialog in Ask (`#doctor-dialog`: session title, short answer, citations, unknowns, suggested doctor questions, Print / save as PDF) per asking session, opened from the `Doctor summary / print` button below the session title.[^user-journey] It always shows the current Ask session — no top-nav Doctor entry, no separate picker.
 
 [^user-journey]: P.A.U.L.I. User-Journey Concept

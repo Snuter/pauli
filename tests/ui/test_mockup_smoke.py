@@ -31,7 +31,7 @@ def test_sessions_seeded(page, mockup_url):
     assert page.get_by_role("link", name="Doctor").count() == 0
     # No sidebar delete button: deletion lives in the Ask buttons with confirmation.
     assert page.locator("#session-delete").count() == 0
-    # Per-session buttons sit side by side below the Ask title.
+    # Per-session buttons sit side by side below the session title.
     assert page.get_by_role("button", name="Doctor summary / print").is_visible()
     assert page.get_by_role("button", name="Delete this session").is_visible()
 
@@ -41,14 +41,14 @@ def test_session_opens_chat(page, mockup_url):
     page.locator("#session-list").wait_for()
     _select_session(page, "ME/CFS cure research")
     assert page.locator("#view-ask").is_visible()
-    assert "ME/CFS cure research" in page.locator("#ask-session-name").text_content()
+    assert "ME/CFS cure research" in page.locator("#ask-title").text_content()
 
 
 def test_session_history_isolated(page, mockup_url):
     page.goto(f"{mockup_url}#/ask")
     page.locator("#session-list").wait_for()
     _select_session(page, "ME/CFS therapies and details")
-    assert "ME/CFS therapies and details" in page.locator("#ask-session-name").text_content()
+    assert "ME/CFS therapies and details" in page.locator("#ask-title").text_content()
     page.locator("#ask-input").fill("What triggers PEM?")
     page.locator("#ask-form button[type=submit]").click()
     page.locator("#history-list li").first.wait_for()
@@ -86,3 +86,11 @@ def test_session_menu_delete_with_confirm(page, mockup_url):
     items = page.locator("#session-list button").all_text_contents()
     assert "ME/CFS cure research" not in items
     assert "ME/CFS therapies and details" in items
+    assert "ME/CFS therapies and details" in page.locator("#ask-title").text_content()
+    # Delete the last session: heading falls back to the empty state.
+    page.locator("#session-list button", has_text="ME/CFS therapies and details").click()
+    page.locator("#menu-delete").click()
+    page.locator("#delete-dialog[open]").wait_for()
+    page.locator("#delete-confirm").click()
+    assert page.locator("#session-list button").count() == 0
+    assert "No session yet" in page.locator("#ask-title").text_content()
