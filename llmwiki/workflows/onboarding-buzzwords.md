@@ -29,7 +29,7 @@ No built-in default topics — the corpus starts from what you enter.[^user-jour
 * Sensitivity (gating): `low / standard / hide details` — see [gating](/workflows/sensitive-gating.md).
 * Retrieval strictness: `0–100` slider → threshold `0.0–0.6` (default `0.3`, `TOP_K=15` fixed) — see [gating](/workflows/sensitive-gating.md).
 * Simplicity of wording: `10–15` slider (default `12`) — see [language](/workflows/language-toggle.md).
-* Updates (email): check cadence (once a week by default), recipient + sender/SMTP fields; one combined email per check, sent only when new papers match a session; failures shown loudly — see [tracking](/workflows/tracking-doctor-visit.md).
+* Updates (email): check cadence (once a week by default), recipient + sender/SMTP fields; one combined email per check, sent only when new papers match a subscribed session (Subscribe toggle in Ask); failures shown loudly — see [tracking](/workflows/tracking-doctor-visit.md).
 
 Next: [ask a question](/workflows/asking-question.md).
 

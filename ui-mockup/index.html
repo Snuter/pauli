@@ -33,6 +33,7 @@ a .icon, button .icon { margin-right: .4rem; }
 .session-menu button { padding: .4rem .6rem; }
 .session-menu button .icon { margin-right: 0; }
 #menu-delete { color: var(--pico-del-color, #d93526); border-color: currentColor; }
+#menu-sub[aria-pressed="true"] { background: var(--pico-primary-background); border-color: var(--pico-primary-background); color: var(--pico-primary-inverse); }
 dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 @media print { aside, header nav, .no-print { display: none !important; } .layout { display: block; } }
 @media (max-width: 800px) { .layout { grid-template-columns: 170px 1fr; gap: .5rem; padding: 0 .5rem; } }
@@ -124,7 +125,7 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 </select>
 </label>
 <p id="mail-status" class="meta"></p>
-<p class="meta">One combined email per check, and only when new papers match a session (same strictness/TOP_K=15, new papers only). Delivery failures are shown here. Single-user, local only.</p>
+<p class="meta">Only subscribed sessions are covered. One combined email per check, and only when new papers match a subscribed session (same strictness/TOP_K=15, new papers only). Delivery failures are shown here. Single-user, local only.</p>
 </article>
 </section>
 
@@ -133,6 +134,7 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 <h2 id="ask-title">Ask</h2>
 <div class="no-print session-menu">
 <button id="menu-doctor" type="button" class="outline" title="Doctor summary / print" aria-label="Doctor summary / print"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg></button>
+<button id="menu-sub" type="button" class="outline" title="Subscribe to email updates for this session" aria-label="Subscribe to email updates for this session" aria-pressed="false"></button>
 <button id="menu-delete" type="button" class="outline" title="Delete this session" aria-label="Delete this session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>
 </div>
 <p class="meta">Multiple sessions share one corpus. Retrieval, strictness and simplicity live under Settings and stay global.</p>
@@ -186,13 +188,14 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
   "use strict";
   var SEEDS = ["ME/CFS therapies and details", "ME/CFS cure research"];
   var KEY = "pauli.mockup.v2";
-  var state = { histories: {}, buzz: ["myalgic encephalomyelitis", "PEM"], mail: { to: "", smtp: "", from: "", freq: "weekly" } };
+  var state = { histories: {}, subs: {}, buzz: ["myalgic encephalomyelitis", "PEM"], mail: { to: "", smtp: "", from: "", freq: "weekly" } };
   var seeded = false;
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) { var p = JSON.parse(raw); if (p && p.histories) { state = p; seeded = true; } }
   } catch (e) {}
   if (!seeded) SEEDS.forEach(function (s) { if (!state.histories[s]) state.histories[s] = []; });
+  if (!state.subs || typeof state.subs !== "object" || Array.isArray(state.subs)) state.subs = {};
   if (!Array.isArray(state.buzz)) state.buzz = [];
   if (!state.mail || typeof state.mail !== "object") state.mail = { to: "", smtp: "", from: "", freq: "weekly" };
   if (["weekly", "daily", "monthly"].indexOf(state.mail.freq) === -1) state.mail.freq = "weekly";
@@ -207,6 +210,7 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
     eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
     skip: '<path d="M5 4l10 8-10 8zM19 4v16"/>',
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 11v5M12 8v.1"/>',
+    mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
     trash: '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/>',
     printer: '<path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/>'
   };
@@ -322,7 +326,20 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
     else if (!h.length) empty.textContent = "No questions yet in this session. Try: “What triggers PEM?”";
     var askTitle = $("ask-title");
     if (askTitle) askTitle.textContent = t || "No session yet";
+    renderSubButton(t);
     renderSessionList();
+  }
+  function isSubscribed(t) { return !!(t && state.subs && state.subs[t]); }
+  function renderSubButton(t) {
+    var b = $("menu-sub");
+    if (!b) return;
+    var on = isSubscribed(t);
+    var label = on ? "Unsubscribe this session from email updates" : "Subscribe to email updates for this session";
+    b.innerHTML = "";
+    b.appendChild(makeIcon("mail"));
+    b.title = label;
+    b.setAttribute("aria-label", label);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
   }
   function renderItem(item, idx) {
     var li = document.createElement("li");
@@ -392,12 +409,21 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
     var t = current();
     if (t) {
       delete state.histories[t];
+      if (state.subs) delete state.subs[t];
       var rest = sessions();
       state.current = rest.length ? rest[0] : null;
       persist(); renderHistory();
     }
     $("delete-dialog").close();
     if (!current()) $("session-new").focus();
+  });
+  $("menu-sub").addEventListener("click", function () {
+    var t = current();
+    if (!t) return;
+    if (!state.subs || typeof state.subs !== "object") state.subs = {};
+    if (state.subs[t]) delete state.subs[t];
+    else state.subs[t] = true;
+    persist(); renderSubButton(t); renderMail();
   });
   $("menu-doctor").addEventListener("click", function () {
     if (!current()) return;
@@ -456,7 +482,12 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
     if ($("mail-smtp")) $("mail-smtp").value = m.smtp || "";
     if ($("mail-from")) $("mail-from").value = m.from || "";
     if ($("mail-freq")) $("mail-freq").value = (["weekly", "daily", "monthly"].indexOf(m.freq) !== -1 ? m.freq : "weekly");
-    if ($("mail-status")) $("mail-status").textContent = m.to ? "" : "No address set — no email is sent.";
+    if ($("mail-status")) {
+      var nsub = state.subs ? Object.keys(state.subs).length : 0;
+      $("mail-status").textContent = !m.to ? "No address set — no email is sent."
+        : !nsub ? "No sessions subscribed — no email is sent."
+        : (nsub === 1 ? "1 session subscribed." : nsub + " sessions subscribed.");
+    }
   }
   ["mail-to", "mail-smtp", "mail-from", "mail-freq"].forEach(function (id) {
     var el = $(id);
