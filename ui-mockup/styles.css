@@ -63,8 +63,6 @@ body {
 .nav-list a { display: inline-block; min-height: 44px; line-height: 44px; padding: 0 0.9rem; color: var(--text); text-decoration: underline; text-underline-offset: 3px; border-radius: 8px; }
 .nav-list a[aria-current="page"] { background: var(--primary); color: var(--primary-text); text-decoration: none; }
 
-.text-size { display: flex; align-items: center; gap: 0.75rem; padding-top: 0.75rem; }
-.text-size-btns { display: flex; gap: 0.5rem; }
 button, .btn {
   min-height: 44px; min-width: 44px;
   font-size: 1.05rem; padding: 0.55rem 1rem;
@@ -142,7 +140,7 @@ input[type="range"] { width: 100%; min-height: 44px; }
 }
 
 @media print {
-  .site-header, .site-footer, .text-size, .no-print, #screen-settings { display: none !important; }
+  .site-header, .site-footer, .no-print, #screen-settings { display: none !important; }
   main section[hidden] { display: none !important; }
   #screen-doctor { display: block !important; }
   body { font-size: 12pt; }

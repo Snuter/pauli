@@ -52,25 +52,6 @@
   }
   window.addEventListener("hashchange", render);
 
-  // ---------- Text size ----------
-  var fontBtns = document.querySelectorAll("[data-font]");
-  function setFont(pct, save) {
-    document.documentElement.style.fontSize = pct === 100 ? "" : (pct / 100 * 100) + "%";
-    document.documentElement.style.fontSize = pct + "%";
-    if (pct === 100) document.documentElement.style.fontSize = "";
-    fontBtns.forEach(function (b) {
-      b.setAttribute("aria-pressed", String(b.getAttribute("data-font") === String(pct)));
-    });
-    if (save !== false) { try { localStorage.setItem("pauli-font", String(pct)); } catch (e) {} }
-  }
-  fontBtns.forEach(function (b) {
-    b.addEventListener("click", function () { setFont(Number(b.getAttribute("data-font"))); });
-  });
-  try {
-    var savedFont = localStorage.getItem("pauli-font");
-    if (savedFont) setFont(Number(savedFont), false);
-  } catch (e) {}
-
   // ---------- Onboarding: buzzwords ----------
   var buzzwords = ["myalgic encephalomyelitis", "PEM"];
   var chipsEl = document.getElementById("buzz-chips");
