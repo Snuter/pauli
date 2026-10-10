@@ -29,6 +29,11 @@ aside .no-print { display: flex; flex-direction: column; gap: .4rem; }
 a .icon, button .icon { margin-right: .4rem; }
 #session-list button .icon { margin-right: .5rem; }
 .sheet { border: 1px solid var(--pico-muted-border-color); border-radius: .5rem; padding: 1rem; }
+.session-menu { margin: .5rem 0 .75rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+.session-menu button { padding: .4rem .6rem; }
+.session-menu button .icon { margin-right: 0; }
+#menu-delete { color: var(--pico-del-color, #d93526); border-color: currentColor; }
+dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 @media print { aside, header nav, .no-print { display: none !important; } .layout { display: block; } }
 @media (max-width: 800px) { .layout { grid-template-columns: 170px 1fr; gap: .5rem; padding: 0 .5rem; } }
 </style>
@@ -39,7 +44,6 @@ a .icon, button .icon { margin-right: .4rem; }
 <ul><li><strong>P.A.U.L.I.</strong> <small>Patient-centered AI for Understanding Literature and Insights</small></li></ul>
 <ul>
 <li><a href="#/library"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Library</a></li>
-<li><a href="#/doctor"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4a3 3 0 0 1 6 0"/><path d="M9 11h6M9 15h6"/></svg>Doctor</a></li>
 <li><a href="#/settings"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h10M18 8h2M4 16h4M12 16h8"/><circle cx="16" cy="8" r="2"/><circle cx="10" cy="16" r="2"/></svg>Settings</a></li>
 </ul>
 </nav>
@@ -52,7 +56,6 @@ a .icon, button .icon { margin-right: .4rem; }
 <div class="session-controls-row">
 <input id="session-new" type="text" placeholder="New session title" maxlength="60">
 <button id="session-add" type="button" title="Create research session" aria-label="Create research session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-<button id="session-delete" type="button" class="secondary" title="Delete history of active session" aria-label="Delete history of active session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>
 </div>
 </div>
 <ul id="session-list"></ul>
@@ -112,6 +115,10 @@ a .icon, button .icon { margin-right: .4rem; }
 <!-- ASK -->
 <section id="view-ask" hidden>
 <h2>Ask</h2>
+<div class="no-print session-menu">
+<button id="menu-doctor" type="button" class="outline" title="Doctor summary / print" aria-label="Doctor summary / print"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg></button>
+<button id="menu-delete" type="button" class="outline" title="Delete this session" aria-label="Delete this session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>
+</div>
 <p class="meta">Research Session: <strong id="ask-session-name">—</strong> (switch in sidebar)</p>
 <p class="meta">Multiple sessions share one corpus. Retrieval, strictness and simplicity live under Settings and stay global.</p>
 <div class="chat">
@@ -148,10 +155,23 @@ a .icon, button .icon { margin-right: .4rem; }
 </article>
 </section>
 
-<!-- DOCTOR (read-only) -->
-<section id="view-doctor" hidden>
-<h2>Doctor visit — 1-page sheet</h2>
-<p class="meta">Showing active session from sidebar.</p>
+</main>
+</div>
+
+<dialog id="delete-dialog">
+<article>
+<header><h3>Delete session?</h3></header>
+<p id="delete-dialog-text">Delete this session?</p>
+<footer>
+<button id="delete-cancel" type="button" class="secondary">Cancel</button>
+<button id="delete-confirm" type="button">Delete</button>
+</footer>
+</article>
+</dialog>
+
+<dialog id="doctor-dialog">
+<article>
+<header><h3>Doctor visit — 1-page sheet</h3></header>
 <article class="sheet">
 <h3 id="sheet-session">—</h3>
 <p><strong>Question:</strong> <span id="sheet-q">—</span></p>
@@ -161,11 +181,12 @@ a .icon, button .icon { margin-right: .4rem; }
 <p><strong>Ask your doctor:</strong> <span id="sheet-doctor">—</span></p>
 <p class="meta">Research info only, not medical advice. Condensed 1-page print view per session.</p>
 </article>
-<button type="button" onclick="window.print()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg>Print / save as PDF</button>
-</section>
-
-</main>
-</div>
+<footer>
+<button id="doctor-close" type="button" class="secondary">Close</button>
+<button id="doctor-print" type="button"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg>Print / save as PDF</button>
+</footer>
+</article>
+</dialog>
 
 <script>
 (function () {
@@ -173,19 +194,18 @@ a .icon, button .icon { margin-right: .4rem; }
   var SEEDS = ["ME/CFS therapies and details", "ME/CFS cure research"];
   var KEY = "pauli.mockup.v1";
   var state = { histories: {}, saved: [], buzz: ["myalgic encephalomyelitis", "PEM"] };
+  var seeded = false;
   try {
     var raw = localStorage.getItem(KEY);
-    if (raw) { var p = JSON.parse(raw); if (p && p.histories) state = p; }
+    if (raw) { var p = JSON.parse(raw); if (p && p.histories) { state = p; seeded = true; } }
   } catch (e) {}
-  SEEDS.forEach(function (s) { if (!state.histories[s]) state.histories[s] = []; });
+  if (!seeded) SEEDS.forEach(function (s) { if (!state.histories[s]) state.histories[s] = []; });
   if (!Array.isArray(state.saved)) state.saved = [];
   if (!Array.isArray(state.buzz)) state.buzz = [];
-  if (!state.current || !state.histories[state.current]) state.current = SEEDS[0];
+  if (!state.current || !state.histories[state.current]) state.current = sessions()[0] || null;
   function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   function sessions() {
-    var out = SEEDS.slice();
-    Object.keys(state.histories).forEach(function (k) { if (out.indexOf(k) === -1) out.push(k); });
-    return out;
+    return Object.keys(state.histories);
   }
   function $(id) { return document.getElementById(id); }
   var ICON_PATHS = {
@@ -193,7 +213,9 @@ a .icon, button .icon { margin-right: .4rem; }
     eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
     skip: '<path d="M5 4l10 8-10 8zM19 4v16"/>',
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 11v5M12 8v.1"/>',
-    bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>'
+    bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>',
+    trash: '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/>',
+    printer: '<path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/>'
   };
   function makeIcon(name) {
     var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -275,7 +297,7 @@ a .icon, button .icon { margin-right: .4rem; }
   // ---- ask view (sidebar is the single session picker) ----
   var list = $("history-list"), empty = $("history-empty"),
       form = $("ask-form"), input = $("ask-input");
-  function current() { return state.current || SEEDS[0]; }
+  function current() { return state.histories[state.current] ? state.current : null; }
   function renderSessionList() {
     var ul = $("session-list"); if (!ul) return;
     ul.innerHTML = "";
@@ -298,14 +320,17 @@ a .icon, button .icon { margin-right: .4rem; }
     });
   }
   function renderHistory() {
-    var h = state.histories[current()] || [];
+    var t = current();
+    var h = t ? (state.histories[t] || []) : [];
     list.innerHTML = "";
     h.forEach(function (item, idx) { list.appendChild(renderItem(item, idx)); });
     empty.hidden = h.length !== 0;
+    if (!t) empty.textContent = "No sessions yet. Create one in the sidebar.";
+    else if (!h.length) empty.textContent = "No questions yet in this session. Try: “What triggers PEM?”";
     var askName = $("ask-session-name");
-    if (askName) askName.textContent = current();
+    if (askName) askName.textContent = t || "—";
     renderSessionList();
-    renderDoctor(); renderLibrary();
+    renderLibrary();
   }
   function renderItem(item, idx) {
     var li = document.createElement("li");
@@ -350,13 +375,15 @@ a .icon, button .icon { margin-right: .4rem; }
   }
   form.addEventListener("submit", function (e) {
     e.preventDefault();
+    var t = current();
+    if (!t) return;
     var q = input.value.trim();
     if (!q) return;
     var ans = answerFor(q);
     var entry = { q: q, html: ans.html, plain: ans.plain, cite: ans.cite,
       unknown: ans.unknown, doctor: ans.doctor, kind: ans.kind,
       gate: ans.gate || null, revealed: false };
-    state.histories[current()].push(entry);
+    state.histories[t].push(entry);
     persist(); input.value = "";
     renderHistory();
   });
@@ -369,10 +396,32 @@ a .icon, button .icon { margin-right: .4rem; }
     if (location.hash !== "#/ask") location.hash = "#/ask";
     renderHistory();
   });
-  $("session-delete").addEventListener("click", function () {
-    state.histories[current()] = [];
-    persist(); renderHistory();
+  $("menu-delete").addEventListener("click", function () {
+    var t = current();
+    if (!t) return;
+    $("delete-dialog-text").textContent = 'Delete session "' + t + '" with all its questions?';
+    $("delete-dialog").showModal();
   });
+  $("delete-cancel").addEventListener("click", function () { $("delete-dialog").close(); });
+  $("delete-confirm").addEventListener("click", function () {
+    var t = current();
+    if (t) {
+      delete state.histories[t];
+      state.saved = state.saved.filter(function (s) { return s.session !== t; });
+      var rest = sessions();
+      state.current = rest.length ? rest[0] : null;
+      persist(); renderHistory();
+    }
+    $("delete-dialog").close();
+    if (!current()) $("session-new").focus();
+  });
+  $("menu-doctor").addEventListener("click", function () {
+    if (!current()) return;
+    renderDoctorDialog();
+    $("doctor-dialog").showModal();
+  });
+  $("doctor-close").addEventListener("click", function () { $("doctor-dialog").close(); });
+  $("doctor-print").addEventListener("click", function () { window.print(); });
 
   // ---- library (read-only) ----
   function renderLibrary() {
@@ -388,9 +437,10 @@ a .icon, button .icon { margin-right: .4rem; }
     });
   }
 
-  // ---- doctor (read-only, follows sidebar session) ----
-  function renderDoctor() {
+  // ---- doctor dialog (read-only, current Ask session) ----
+  function renderDoctorDialog() {
     var t = current();
+    if (!t) return;
     var h = state.histories[t] || [];
     $("sheet-session").textContent = t;
     if (h.length) {
@@ -443,12 +493,11 @@ a .icon, button .icon { margin-right: .4rem; }
   renderSimple();
 
   // ---- router ----
-  var views = { "/": "view-settings", "/ask": "view-ask", "/library": "view-library", "/doctor": "view-doctor", "/settings": "view-settings" };
+  var views = { "/": "view-settings", "/ask": "view-ask", "/library": "view-library", "/settings": "view-settings" };
   function route() {
     var h = location.hash.replace(/^#/, "") || "/";
     var id = views[h] || "view-settings";
     Object.keys(views).forEach(function (k) { $(views[k]).hidden = views[k] !== id; });
-    if (id === "view-doctor") renderDoctor();
   }
   window.addEventListener("hashchange", route);
 

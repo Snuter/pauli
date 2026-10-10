@@ -27,6 +27,13 @@ def test_sessions_seeded(page, mockup_url):
     assert page.locator("#doctor-session-select").count() == 0
     # No Ask entry in the top nav: sessions are the entry point to chat.
     assert page.get_by_role("link", name="Ask").count() == 0
+    # No Doctor entry in the top nav: doctor summary lives in the Ask session buttons.
+    assert page.get_by_role("link", name="Doctor").count() == 0
+    # No sidebar delete button: deletion lives in the Ask buttons with confirmation.
+    assert page.locator("#session-delete").count() == 0
+    # Per-session buttons sit side by side below the Ask title.
+    assert page.get_by_role("button", name="Doctor summary / print").is_visible()
+    assert page.get_by_role("button", name="Delete this session").is_visible()
 
 
 def test_session_opens_chat(page, mockup_url):
@@ -60,7 +67,22 @@ def test_doctor_sheet_per_session(page, mockup_url):
     page.locator("#ask-input").fill("What triggers PEM?")
     page.locator("#ask-form button[type=submit]").click()
     page.locator("#history-list li").first.wait_for()
-    page.goto(f"{mockup_url}#/doctor")
-    # Doctor follows the shared sidebar session, no independent picker.
+    # Doctor summary opens from the Ask session buttons, not the top nav.
+    page.locator("#view-ask").is_visible()
+    page.locator("#menu-doctor").click()
+    page.locator("#doctor-dialog[open]").wait_for()
     assert "ME/CFS therapies and details" in page.locator("#sheet-session").text_content()
     assert "What triggers PEM?" in page.locator("#sheet-q").text_content()
+
+
+def test_session_menu_delete_with_confirm(page, mockup_url):
+    page.goto(f"{mockup_url}#/ask")
+    page.locator("#session-list").wait_for()
+    _select_session(page, "ME/CFS cure research")
+    page.locator("#menu-delete").click()
+    page.locator("#delete-dialog[open]").wait_for()
+    assert "ME/CFS cure research" in page.locator("#delete-dialog-text").text_content()
+    page.locator("#delete-confirm").click()
+    items = page.locator("#session-list button").all_text_contents()
+    assert "ME/CFS cure research" not in items
+    assert "ME/CFS therapies and details" in items

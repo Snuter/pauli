@@ -13,7 +13,7 @@ sources:
 
 # Tracker + export
 
-Follow topics; weekly manual digest in plain language. Library: save answers/papers (SQLite relations to PMCID + answer id), single-user no auth, no retention/delete in MVP. Sessions: `sessions (id, title, created_at)` + `session_answers (session_id, question, answer_id)`; library entries tagged with `session_id`; deleting a session removes its history only. Export: condensed 1-page browser print-view HTML per session (print to PDF) with session title, short answer, citations, unknowns, suggested doctor questions.[^tech-concept]
+Follow topics; weekly manual digest in plain language. Library: save answers/papers (SQLite relations to PMCID + answer id), single-user no auth, no retention/delete in MVP. Sessions: `sessions (id, title, created_at)` + `session_answers (session_id, question, answer_id)`; library entries tagged with `session_id`; deleting a session removes the session entirely (plus its history). Export: condensed 1-page dialog per session in Ask (print to PDF) with session title, short answer, citations, unknowns, suggested doctor questions.[^tech-concept]
 
 User view: [tracking](/workflows/tracking-doctor-visit.md).
 
