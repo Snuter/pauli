@@ -270,13 +270,26 @@ dialog article footer button[type="submit"] { width: auto; }
   "use strict";
   var SEEDS = ["ME/CFS therapies and details", "ME/CFS cure research"];
   var KEY = "pauli.mockup.v2";
-  var state = { histories: {}, subs: {}, buzz: ["myalgic encephalomyelitis", "PEM"], mail: { to: "", smtp: "", from: "", freq: "weekly" } };
+  var state = { histories: {}, created: {}, subs: {}, buzz: ["myalgic encephalomyelitis", "PEM"], mail: { to: "", smtp: "", from: "", freq: "weekly" } };
   var seeded = false;
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) { var p = JSON.parse(raw); if (p && p.histories) { state = p; seeded = true; } }
   } catch (e) {}
-  if (!seeded) SEEDS.forEach(function (s) { if (!state.histories[s]) state.histories[s] = []; });
+  if (!state.created || typeof state.created !== "object" || Array.isArray(state.created)) state.created = {};
+  if (!seeded) {
+    var nowSeed = Date.now();
+    SEEDS.forEach(function (s, i) {
+      if (!state.histories[s]) state.histories[s] = [];
+      if (state.created[s] == null) state.created[s] = nowSeed + i;
+    });
+  }
+  Object.keys(state.histories).forEach(function (t, idx) {
+    if (state.created[t] == null) state.created[t] = idx;
+  });
+  Object.keys(state.created).forEach(function (t) {
+    if (!state.histories[t]) delete state.created[t];
+  });
   if (!state.subs || typeof state.subs !== "object" || Array.isArray(state.subs)) state.subs = {};
   if (!Array.isArray(state.buzz)) state.buzz = [];
   if (!state.mail || typeof state.mail !== "object") state.mail = { to: "", smtp: "", from: "", freq: "weekly" };
@@ -284,7 +297,19 @@ dialog article footer button[type="submit"] { width: auto; }
   if (!state.current || !state.histories[state.current]) state.current = sessions()[0] || null;
   function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   function sessions() {
-    return Object.keys(state.histories);
+    return Object.keys(state.histories).sort(function (a, b) {
+      var ca = state.created[a] || 0, cb = state.created[b] || 0;
+      if (cb !== ca) return cb - ca;
+      return a < b ? -1 : a > b ? 1 : 0;
+    });
+  }
+  function touchSession(t) {
+    if (!t || !state.histories[t]) return;
+    var maxC = 0;
+    Object.keys(state.created).forEach(function (k) {
+      if (state.created[k] > maxC) maxC = state.created[k];
+    });
+    state.created[t] = Math.max(Date.now(), maxC + 1);
   }
   function $(id) { return document.getElementById(id); }
   var ICON_PATHS = {
@@ -495,6 +520,7 @@ dialog article footer button[type="submit"] { width: auto; }
     var j = idx + delta;
     if (idx < 0 || j < 0 || idx >= h.length || j >= h.length) return;
     var tmp = h[idx]; h[idx] = h[j]; h[j] = tmp;
+    touchSession(t);
     persist(); renderHistory(); scrollToItem(j);
     var items = list.children;
     if (items[j]) {
@@ -557,6 +583,7 @@ dialog article footer button[type="submit"] { width: auto; }
       unknown: ans.unknown, doctor: ans.doctor, kind: ans.kind,
       gate: ans.gate || null, revealed: false };
     state.histories[t].push(entry);
+    touchSession(t);
     persist(); input.value = "";
     renderHistory();
     scrollToItem();
@@ -564,7 +591,14 @@ dialog article footer button[type="submit"] { width: auto; }
   $("session-add").addEventListener("click", function () {
     var t = $("session-new").value.trim().slice(0, 60);
     if (!t) return;
-    if (!state.histories[t]) state.histories[t] = [];
+    if (!state.histories[t]) {
+      state.histories[t] = [];
+      var maxC = 0;
+      Object.keys(state.created).forEach(function (k) {
+        if (state.created[k] > maxC) maxC = state.created[k];
+      });
+      state.created[t] = Math.max(Date.now(), maxC + 1);
+    }
     state.current = t;
     persist(); $("session-new").value = "";
     if (location.hash !== "#/ask") location.hash = "#/ask";
@@ -581,6 +615,7 @@ dialog article footer button[type="submit"] { width: auto; }
     var t = current();
     if (t) {
       delete state.histories[t];
+      delete state.created[t];
       if (state.subs) delete state.subs[t];
       var rest = sessions();
       state.current = rest.length ? rest[0] : null;
@@ -594,11 +629,14 @@ dialog article footer button[type="submit"] { width: auto; }
     }
   });
   function renameSession(oldT, newT) {
-    var histories = {};
-    sessions().forEach(function (t) {
-      histories[t === oldT ? newT : t] = state.histories[t];
+    state.histories[newT] = state.histories[oldT];
+    delete state.histories[oldT];
+    var maxC = 0;
+    Object.keys(state.created).forEach(function (k) {
+      if (state.created[k] > maxC) maxC = state.created[k];
     });
-    state.histories = histories;
+    state.created[newT] = Math.max(Date.now(), maxC + 1);
+    delete state.created[oldT];
     if (state.subs && state.subs[oldT]) {
       delete state.subs[oldT];
       state.subs[newT] = true;
@@ -642,6 +680,7 @@ dialog article footer button[type="submit"] { width: auto; }
     var idx = qeditIdx;
     qeditIdx = -1;
     $("qedit-dialog").close();
+    touchSession(t);
     persist(); renderHistory(); scrollToItem(idx);
   });
   $("qdelete-cancel").addEventListener("click", function () { $("qdelete-dialog").close(); qdeleteIdx = -1; });
@@ -650,6 +689,7 @@ dialog article footer button[type="submit"] { width: auto; }
     if (t && qdeleteIdx >= 0) {
       var h = state.histories[t] || [];
       if (qdeleteIdx < h.length) h.splice(qdeleteIdx, 1);
+      touchSession(t);
       persist(); renderHistory();
     }
     qdeleteIdx = -1;
@@ -661,7 +701,8 @@ dialog article footer button[type="submit"] { width: auto; }
     if (!state.subs || typeof state.subs !== "object") state.subs = {};
     if (state.subs[t]) delete state.subs[t];
     else state.subs[t] = true;
-    persist(); renderSubButton(t); renderMail();
+    touchSession(t);
+    persist(); renderHistory(); renderMail();
   });
   $("menu-doctor").addEventListener("click", function () {
     if (!current()) return;
