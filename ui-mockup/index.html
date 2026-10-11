@@ -252,6 +252,7 @@ dialog article footer button[type="submit"] { width: auto; }
     skip: '<path d="M5 4l10 8-10 8zM19 4v16"/>',
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 11v5M12 8v.1"/>',
     mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
+    sub: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
     trash: '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/>',
     printer: '<path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/>'
   };
@@ -381,7 +382,7 @@ dialog article footer button[type="submit"] { width: auto; }
     var on = isSubscribed(t);
     var label = on ? "Unsubscribe this session from email updates" : "Subscribe to email updates for this session";
     b.innerHTML = "";
-    b.appendChild(makeIcon("mail"));
+    b.appendChild(makeIcon("sub"));
     b.title = label;
     b.setAttribute("aria-label", label);
     b.setAttribute("aria-pressed", on ? "true" : "false");
