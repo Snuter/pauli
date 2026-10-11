@@ -27,12 +27,16 @@ aside .no-print { display: flex; flex-direction: column; gap: .4rem; }
 .session-controls-row input { flex: 1; min-width: 0; margin-bottom: 0; }
 .session-controls-row button { flex: 0 0 auto; padding: .4rem .6rem; }
 .session-controls-row button .icon { margin-right: 0; }
-#ask-form { display: flex; gap: 0; }
+#ask-form { display: flex; gap: 0; position: sticky; bottom: -1rem; z-index: 5; background: transparent; border: none; box-shadow: none; padding: .5rem 10px 1rem .25rem; }
+#ask-form:focus-within, #ask-form:focus, #ask-form:active { background: transparent; border: none; box-shadow: none; outline: none; }
 #ask-form input { flex: 1; min-width: 0; margin-bottom: 0; }
 #ask-form button { flex: 0 0 auto; white-space: nowrap; }
+.ask-sticky-top { position: sticky; top: -1.5rem; z-index: 5; background: var(--pico-background-color, #fff); padding-top: 1.5rem; padding-bottom: .5rem; border-bottom: 1px solid var(--pico-muted-border-color); }
+.ask-sticky-top #ask-title { margin-bottom: .5rem; }
+.ask-sticky-top .session-menu { margin: 0; }
 .chat { display: flex; flex-direction: column; gap: .75rem; }
 #history-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
-#history-list li { margin: 0; }
+#history-list li { margin: 0; scroll-margin-top: .5rem; scroll-margin-bottom: 5rem; }
 .q { font-weight: 600; }
 .a { margin-top: .25rem; }
 .blur { filter: blur(6px); user-select: none; pointer-events: none; }
@@ -57,7 +61,7 @@ a:has(.icon), button:has(.icon), aside h3:has(.icon) { white-space: nowrap; }
 #menu-sub[aria-pressed="true"] { background: var(--pico-primary-background); border-color: var(--pico-primary-background); color: var(--pico-primary-inverse); }
 dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 dialog article footer button[type="submit"] { width: auto; }
-@media print { html, body { height: auto; overflow: visible; display: block; } aside, header nav, .no-print { display: none !important; } .layout { display: block; overflow: visible; } .layout > aside, .layout > main { overflow: visible; } .site-header { position: static; border-bottom: none; margin-bottom: 0; } .site-footer { position: static; border-top: none; padding: .5rem 0; } body { padding-bottom: 0; } }
+@media print { html, body { height: auto; overflow: visible; display: block; } aside, header nav, .no-print { display: none !important; } .layout { display: block; overflow: visible; } .layout > aside, .layout > main { overflow: visible; } .site-header { position: static; border-bottom: none; margin-bottom: 0; } .site-footer { position: static; border-top: none; padding: .5rem 0; } body { padding-bottom: 0; } .ask-sticky-top, #ask-form { position: static; } }
 @media (max-width: 800px) { .layout { grid-template-columns: 170px 1fr; gap: 1rem; padding: 0 .5rem; } .site-header nav { padding: 0 .5rem 0 calc(170px + 1rem + .5rem); } }
 </style>
 </head>
@@ -164,12 +168,14 @@ dialog article footer button[type="submit"] { width: auto; }
 
 <!-- ASK -->
 <section id="view-ask" hidden>
+<div class="ask-sticky-top">
 <h2 id="ask-title">Ask</h2>
 <div class="no-print session-menu">
 <button id="menu-rename" type="button" class="outline" title="Rename this session" aria-label="Rename this session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>
 <button id="menu-sub" type="button" class="outline" title="Subscribe to email updates for this session" aria-label="Subscribe to email updates for this session" aria-pressed="false"></button>
 <button id="menu-doctor" type="button" class="outline" title="Doctor summary / print" aria-label="Doctor summary / print"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg></button>
 <button id="menu-delete" type="button" class="outline" title="Delete this session" aria-label="Delete this session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>
+</div>
 </div>
 <p class="meta">Multiple sessions share one corpus. Retrieval and strictness live under Initial Setup, simplicity under Preferences — all global.</p>
 <div class="chat">
@@ -411,7 +417,7 @@ dialog article footer button[type="submit"] { width: auto; }
       var why = document.createElement("p"); why.className = "meta"; why.hidden = true;
       why.textContent = "Gated because it may mention " + item.gate.cat + ". Nothing reveals without your click.";
       var body = document.createElement("div"); body.className = "blur"; body.innerHTML = item.html;
-      bShow.onclick = function () { item.revealed = true; persist(); renderHistory(); };
+      bShow.onclick = function () { item.revealed = true; persist(); renderHistory(); scrollToItem(idx); };
       bSkip.onclick = function () { card.innerHTML = ""; var s = document.createElement("p"); s.className = "meta"; s.textContent = "Skipped gated answer (" + item.gate.cat + ")."; card.appendChild(s); };
       bWhy.onclick = function () { why.hidden = !why.hidden; };
       var acts = document.createElement("div"); acts.className = "gate-actions no-print";
@@ -424,6 +430,26 @@ dialog article footer button[type="submit"] { width: auto; }
     }
     li.appendChild(a);
     return li;
+  }
+  function scrollToItem(idx) {
+    var main = document.querySelector(".layout > main");
+    var items = list.children;
+    if (!items.length) return;
+    var reduce = false;
+    try { reduce = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) {}
+    var behavior = reduce ? "auto" : "smooth";
+    var el = (typeof idx === "number") ? items[idx] : items[items.length - 1];
+    if (!el) return;
+    try {
+      if (typeof idx === "number" && idx !== items.length - 1) {
+        if (typeof el.scrollIntoView === "function") el.scrollIntoView({ block: "nearest", behavior: behavior });
+      } else if (main) {
+        if (typeof main.scrollTo === "function") main.scrollTo({ top: main.scrollHeight, behavior: behavior });
+        else main.scrollTop = main.scrollHeight;
+      } else if (typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ block: "end", behavior: behavior });
+      }
+    } catch (e) {}
   }
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -438,6 +464,7 @@ dialog article footer button[type="submit"] { width: auto; }
     state.histories[t].push(entry);
     persist(); input.value = "";
     renderHistory();
+    scrollToItem();
   });
   $("session-add").addEventListener("click", function () {
     var t = $("session-new").value.trim().slice(0, 60);
