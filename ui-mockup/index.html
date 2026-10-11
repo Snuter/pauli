@@ -91,9 +91,11 @@ dialog article footer button[type="submit"] { width: auto; }
 <p>To get started, create your first research session in the sidebar under Research.</p>
 </section>
 
-<!-- SETTINGS (unified: setup + preferences in one place) -->
+<!-- SETTINGS (single page, split: Initial Setup + Preferences anchors) -->
 <section id="view-settings">
-<h2>Settings — setup and preferences</h2>
+<h2>Settings</h2>
+<p class="no-print meta"><a href="#/settings/setup">Initial Setup</a> | <a href="#/settings/preferences">Preferences</a></p>
+<h3 id="setup">Initial Setup</h3>
 <article>
 <h3>Ollama setup (once)</h3>
 <label><input type="radio" name="mode" value="local" checked> Local models (default, private, no key)</label>
@@ -104,6 +106,12 @@ dialog article footer button[type="submit"] { width: auto; }
 <label>API key (cloud only) <input id="ollama-key" type="password" placeholder="stored locally only"></label>
 </div>
 <p id="ollama-warn" class="meta">Without the configured model (or cloud key for cloud) the app reports misconfiguration instead of answering.</p>
+</article>
+<article>
+<h3>Retrieval strictness</h3>
+<label>Strictness <span id="strict-val">30</span>/100 <input id="strict" type="range" min="0" max="100" value="30"></label>
+<p class="meta">Threshold 0.0–0.6 (default 0.3). TOP_K=15 fixed. Separate from sensitivity.</p>
+<p class="meta">Context window: retrieved passages are placed into your Ollama model's context window — lower strictness sends more text and needs a larger window. Usable context size depends on the model (each model has a fixed maximum) and on your hardware (a local model needs enough RAM/VRAM to hold it; cloud models follow the provider's limits). If answers get cut off, turn incoherent, or everything gets very slow, raise strictness to send less context, or switch to a model with a larger context window on hardware that can hold it.</p>
 </article>
 <article>
 <h3>Your topic (1–5 buzzwords, OR-union)</h3>
@@ -120,25 +128,7 @@ dialog article footer button[type="submit"] { width: auto; }
 <p id="buzz-progress" class="meta"></p>
 </article>
 <article>
-<h3>Sensitivity (gating)</h3>
-<label><input type="radio" name="sensitivity" value="low"> Low — gate only suicidality/self-harm</label>
-<label><input type="radio" name="sensitivity" value="standard" checked> Standard — gate all 6 categories</label>
-<label><input type="radio" name="sensitivity" value="hide"> Hide details — title-only gate, double-confirm</label>
-<p class="meta">Categories: prognosis/mortality, suicidality, severe disability, pregnancy/children, medical trauma, PEM crash risk.</p>
-</article>
-<article>
-<h3>Retrieval strictness</h3>
-<label>Strictness <span id="strict-val">30</span>/100 <input id="strict" type="range" min="0" max="100" value="30"></label>
-<p class="meta">Threshold 0.0–0.6 (default 0.3). TOP_K=15 fixed. Separate from sensitivity.</p>
-</article>
-<article>
-<h3>Simplicity of wording</h3>
-<label>Simplicity <span id="simple-val">12</span>/15 <input id="simple" type="range" min="10" max="15" value="12"></label>
-<p id="simple-preview" class="meta"></p>
-<p class="meta">Same papers and citations, different wording. Never adds facts.</p>
-</article>
-<article>
-<h3>Updates (email)</h3>
+<h3>Subscription email (optional)</h3>
 <div class="grid">
 <label>Notify to <input id="mail-to" type="email" placeholder="you@example.org" autocomplete="off"></label>
 <label>SMTP host <input id="mail-smtp" type="text" placeholder="e.g. localhost:1025" autocomplete="off"></label>
@@ -152,7 +142,21 @@ dialog article footer button[type="submit"] { width: auto; }
 </select>
 </label>
 <p id="mail-status" class="meta"></p>
-<p class="meta">Only subscribed sessions are covered. One combined email per check, and only when new papers match a subscribed session (same strictness/TOP_K=15, new papers only). Delivery failures are shown here. Single-user, local only.</p>
+<p class="meta">Optional setup. Only subscribed sessions are covered. One combined email per check, and only when new papers match a subscribed session (same strictness/TOP_K=15, new papers only). Delivery failures are shown here. Single-user, local only.</p>
+</article>
+<h3 id="preferences">Preferences</h3>
+<article>
+<h3>Sensitivity (gating)</h3>
+<label><input type="radio" name="sensitivity" value="low"> Low — gate only suicidality/self-harm</label>
+<label><input type="radio" name="sensitivity" value="standard" checked> Standard — gate all 6 categories</label>
+<label><input type="radio" name="sensitivity" value="hide"> Hide details — title-only gate, double-confirm</label>
+<p class="meta">Categories: prognosis/mortality, suicidality, severe disability, pregnancy/children, medical trauma, PEM crash risk.</p>
+</article>
+<article>
+<h3>Simplicity of wording</h3>
+<label>Simplicity <span id="simple-val">12</span>/15 <input id="simple" type="range" min="10" max="15" value="12"></label>
+<p id="simple-preview" class="meta"></p>
+<p class="meta">Same papers and citations, different wording. Never adds facts.</p>
 </article>
 </section>
 
@@ -165,7 +169,7 @@ dialog article footer button[type="submit"] { width: auto; }
 <button id="menu-doctor" type="button" class="outline" title="Doctor summary / print" aria-label="Doctor summary / print"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg></button>
 <button id="menu-delete" type="button" class="outline" title="Delete this session" aria-label="Delete this session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>
 </div>
-<p class="meta">Multiple sessions share one corpus. Retrieval, strictness and simplicity live under Settings and stay global.</p>
+<p class="meta">Multiple sessions share one corpus. Retrieval and strictness live under Initial Setup, simplicity under Preferences — all global.</p>
 <div class="chat">
 <p id="history-empty">No questions yet in this session. Try: “What triggers PEM?”</p>
 <ul id="history-list"></ul>
@@ -595,17 +599,22 @@ dialog article footer button[type="submit"] { width: auto; }
   renderSimple();
 
   // ---- router ----
-  var views = { "/": "view-home", "/ask": "view-ask", "/settings": "view-settings", "/home": "view-home" };
+  var views = { "/": "view-settings", "/ask": "view-ask", "/settings": "view-settings", "/settings/setup": "view-settings", "/settings/preferences": "view-settings", "/home": "view-home" };
   var allViews = ["view-home", "view-settings", "view-ask"];
   function route() {
     var h = location.hash.replace(/^#/, "") || "/";
     var id;
     if (sessions().length === 0) {
-      id = (h === "/settings") ? "view-settings" : "view-home";
+      id = (h === "/home") ? "view-home" : "view-settings";
     } else {
       id = views[h] || "view-home";
     }
     allViews.forEach(function (vid) { $(vid).hidden = vid !== id; });
+    if (id === "view-settings") {
+      var anchor = (h === "/settings/preferences") ? "preferences" : "setup";
+      var el = document.getElementById(anchor);
+      if (el && typeof el.scrollIntoView === "function") el.scrollIntoView();
+    }
   }
   window.addEventListener("hashchange", route);
 

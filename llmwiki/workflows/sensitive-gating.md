@@ -15,7 +15,7 @@ sources:
 
 Gate categories: prognosis/mortality, suicidality, severe disability, pregnancy/children, medical trauma, PEM crash risk.[^user-journey]
 
-Sensitivity and retrieval-strictness sliders both live on the unified Settings screen alongside Ollama setup, buzzwords, and simplicity (see [settings](/workflows/onboarding-buzzwords.md)).
+Sensitivity lives under Preferences on the Settings page alongside simplicity; retrieval strictness sits with the Ollama setup in Initial Setup (it controls how much context reaches the model) — optional subscription email is also in Initial Setup (see [settings](/workflows/onboarding-buzzwords.md)).
 
 1. Blurred card first: `This answer contains [category] — Show / Skip / Why am I seeing this?`[^user-journey]
 2. Nothing reveals without your click. Simpler slider settings use gentler wording.[^user-journey]

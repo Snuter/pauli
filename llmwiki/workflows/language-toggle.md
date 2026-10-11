@@ -13,7 +13,7 @@ sources:
 
 # Language toggle
 
-`simplicity` slider only, on the unified Settings screen alongside Ollama setup, buzzwords, sensitivity, and strictness (see [settings](/workflows/onboarding-buzzwords.md)). Same papers and citations, different wording.[^user-journey]
+`simplicity` slider only, under Preferences on the Settings page alongside sensitivity (retrieval strictness sits with the Ollama setup in Initial Setup, subscription email is the optional part of Initial Setup) (see [settings](/workflows/onboarding-buzzwords.md)). Same papers and citations, different wording.[^user-journey]
 
 * Slider 10–15 controls sentence length and glossary use (default 12): low end = very short sentences, full glossary (`PEM -> crash after effort`), `What this means:` line; high end = longer sentences, less glossary, term + short definition kept, e.g. `post-exertional malaise (crash after effort)`.[^user-journey]
 

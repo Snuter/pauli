@@ -1,6 +1,7 @@
 # LLMWIKI Update Log
 
 ## 2026-10-11
+* **Update**: Split Settings into Initial Setup (`#setup`: Ollama, strictness, buzzwords, optional subscription email) + Preferences (`#preferences`: sensitivity, simplicity) on one page with anchor nav; `/` defaults to Settings. `ui-mockup/index.html` + `tests/ui/test_mockup_smoke.py`; `workflows/onboarding-buzzwords.md` / `sensitive-gating.md` / `language-toggle.md` / `tracking-doctor-visit.md` / `architecture/testing.md` updated.
 * **Update**: Added per-session rename — Ask `Rename this session` button (`#menu-rename`, pencil icon) beside Subscribe/Doctor/Delete opens `#rename-dialog` (prefilled `#rename-input`, `maxlength=60`, Save/Cancel); trims, rejects empty/duplicate titles with a hint (dialog stays open), preserves sidebar order, history, and subscription via `renameSession()`. `ui-mockup/index.html` + `tests/ui/test_mockup_rename.py`; `workflows/asking-question.md` / `architecture/tracker-export.md` updated.
 
 ## 2026-10-10

@@ -3,8 +3,16 @@
 import re
 
 
-def test_home_visible_by_default(page, mockup_url):
+def test_setup_visible_by_default(page, mockup_url):
     page.goto(mockup_url)
+    heading = page.get_by_role("heading", name="Initial Setup")
+    heading.wait_for()
+    assert heading.is_visible()
+    assert page.locator("#view-settings").is_visible()
+
+
+def test_home_reachable(page, mockup_url):
+    page.goto(f"{mockup_url}#/home")
     heading = page.get_by_role("heading", name="Welcome to P.A.U.L.I.")
     heading.wait_for()
     assert heading.is_visible()
@@ -13,11 +21,18 @@ def test_home_visible_by_default(page, mockup_url):
 
 def test_settings_reachable(page, mockup_url):
     page.goto(f"{mockup_url}#/settings")
-    heading = page.get_by_role("heading", name="Settings — setup and preferences")
+    heading = page.get_by_role("heading", name="Settings")
     heading.wait_for()
     assert heading.is_visible()
-    for name in ["Ollama setup", "Your topic", "Sensitivity (gating)", "Retrieval strictness", "Simplicity of wording"]:
+    for name in ["Initial Setup", "Ollama setup", "Retrieval strictness", "Your topic", "Subscription email (optional)", "Preferences", "Sensitivity (gating)", "Simplicity of wording"]:
         assert page.get_by_role("heading", name=name).is_visible()
+    # Anchor sub-routes land on the same page at the right group.
+    page.goto(f"{mockup_url}#/settings/preferences")
+    assert page.locator("#view-settings").is_visible()
+    assert page.get_by_role("heading", name="Preferences").is_visible()
+    page.goto(f"{mockup_url}#/settings/setup")
+    assert page.locator("#view-settings").is_visible()
+    assert page.get_by_role("heading", name="Initial Setup").is_visible()
 
 
 def _select_session(page, title):
