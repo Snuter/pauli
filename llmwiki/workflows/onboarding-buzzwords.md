@@ -32,7 +32,7 @@ Check cadence (once a week by default), recipient + sender/SMTP fields; one comb
 
 ## Preferences (`#preferences`)
 
-* Sensitivity (gating): `low / standard / hide details` — see [gating](/workflows/sensitive-gating.md).
+* Sensitivity gating: `low / standard / hide details` — see [gating](/workflows/sensitive-gating.md).
 * Simplicity of wording: `10–15` slider (default `12`) — see [language](/workflows/language-toggle.md).
 
 Next: [ask a question](/workflows/asking-question.md).

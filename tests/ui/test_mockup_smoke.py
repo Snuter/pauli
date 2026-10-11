@@ -24,7 +24,7 @@ def test_settings_reachable(page, mockup_url):
     heading = page.get_by_role("heading", name="Settings")
     heading.wait_for()
     assert heading.is_visible()
-    for name in ["Initial Setup", "Ollama setup", "Retrieval strictness", "Your topic", "Subscription email (optional)", "Preferences", "Sensitivity (gating)", "Simplicity of wording"]:
+    for name in ["Initial Setup", "Ollama setup", "Retrieval strictness", "Your topic", "Subscription email (optional)", "Preferences", "Sensitivity gating", "Simplicity of wording"]:
         assert page.get_by_role("heading", name=name).is_visible()
     # Anchor sub-routes land on the same page at the right group.
     page.goto(f"{mockup_url}#/settings/preferences")
