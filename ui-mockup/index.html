@@ -125,10 +125,21 @@ dialog article footer button[type="submit"] { width: auto; }
 <p id="ollama-hello-status" class="meta" role="status"></p>
 </article>
 <article>
-<h3>Retrieval strictness</h3>
-<label>Strictness <span id="strict-val">30</span>/100 <input id="strict" type="range" min="0" max="100" value="30"></label>
-<p class="meta">Threshold 0.0–0.6 (default 0.3). TOP_K=15 fixed. Separate from sensitivity.</p>
-<p class="meta">Context window: retrieved passages are placed into your Ollama model's context window — lower strictness sends more text and needs a larger window. Usable context size depends on the model (each model has a fixed maximum) and on your hardware (a local model needs enough RAM/VRAM to hold it; cloud models follow the provider's limits). If answers get cut off, turn incoherent, or everything gets very slow, raise strictness to send less context, or switch to a model with a larger context window on hardware that can hold it.</p>
+<h3>Subscription email (optional)</h3>
+<div class="grid">
+<label>Notify to <input id="mail-to" type="email" placeholder="you@example.org" autocomplete="off"></label>
+<label>SMTP host <input id="mail-smtp" type="text" placeholder="e.g. localhost:1025" autocomplete="off"></label>
+<label>Sender <input id="mail-from" type="email" placeholder="pauli@localhost" autocomplete="off"></label>
+</div>
+<label>Check for new papers
+<select id="mail-freq">
+<option value="weekly" selected>Once a week</option>
+<option value="daily">Once a day</option>
+<option value="monthly">Once a month</option>
+</select>
+</label>
+<p id="mail-status" class="meta"></p>
+<p class="meta">Optional setup. Only subscribed sessions are covered. One combined email per check, and only when new papers match a subscribed session (same strictness/TOP_K=15, new papers only). Delivery failures are shown here. Single-user, local only.</p>
 </article>
 <article>
 <h3>Auto-collected topics (AI-extracted)</h3>
@@ -148,21 +159,10 @@ dialog article footer button[type="submit"] { width: auto; }
 <p id="buzz-progress" class="meta"></p>
 </article>
 <article>
-<h3>Subscription email (optional)</h3>
-<div class="grid">
-<label>Notify to <input id="mail-to" type="email" placeholder="you@example.org" autocomplete="off"></label>
-<label>SMTP host <input id="mail-smtp" type="text" placeholder="e.g. localhost:1025" autocomplete="off"></label>
-<label>Sender <input id="mail-from" type="email" placeholder="pauli@localhost" autocomplete="off"></label>
-</div>
-<label>Check for new papers
-<select id="mail-freq">
-<option value="weekly" selected>Once a week</option>
-<option value="daily">Once a day</option>
-<option value="monthly">Once a month</option>
-</select>
-</label>
-<p id="mail-status" class="meta"></p>
-<p class="meta">Optional setup. Only subscribed sessions are covered. One combined email per check, and only when new papers match a subscribed session (same strictness/TOP_K=15, new papers only). Delivery failures are shown here. Single-user, local only.</p>
+<h3>Retrieval strictness</h3>
+<label>Strictness <span id="strict-val">30</span>/100 <input id="strict" type="range" min="0" max="100" value="30"></label>
+<p class="meta">Threshold 0.0–0.6 (default 0.3). TOP_K=15 fixed. Separate from sensitivity.</p>
+<p class="meta">Context window: retrieved passages are placed into your Ollama model's context window — lower strictness sends more text and needs a larger window. Usable context size depends on the model (each model has a fixed maximum) and on your hardware (a local model needs enough RAM/VRAM to hold it; cloud models follow the provider's limits). If answers get cut off, turn incoherent, or everything gets very slow, raise strictness to send less context, or switch to a model with a larger context window on hardware that can hold it.</p>
 </article>
 <h3 id="preferences">Preferences</h3>
 <article>
