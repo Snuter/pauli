@@ -52,7 +52,7 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 <body>
 <header class="site-header">
 <nav>
-<ul><li class="brand"><img class="brand-logo" src="assets/logo.svg" width="200" height="40" alt="P.A.U.L.I. logo"><span class="brand-text"><small>Patient-centered AI for Understanding Literature and Insights</small></span></li></ul>
+<ul><li class="brand"><a href="#/home" aria-label="Home"><img class="brand-logo" src="assets/logo.svg" width="200" height="40" alt="P.A.U.L.I. logo"></a><span class="brand-text"><small>Patient-centered AI for Understanding Literature and Insights</small></span></li></ul>
 <ul>
 <li><a href="#/settings"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h10M18 8h2M4 16h4M12 16h8"/><circle cx="16" cy="8" r="2"/><circle cx="10" cy="16" r="2"/></svg>Settings</a></li>
 </ul>
@@ -74,6 +74,14 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 </aside>
 
 <main>
+<!-- HOME (empty state: no sessions yet, no Ask form here) -->
+<section id="view-home" hidden>
+<h2>Welcome to P.A.U.L.I.</h2>
+<p>Patient-centered AI for Understanding Literature and Insights — ask questions about open-access papers on your topic, with citations for every answer.</p>
+<p class="meta">Research info only, not medical advice.</p>
+<p>To get started, create your first research session in the sidebar under Research Sessions.</p>
+</section>
+
 <!-- SETTINGS (unified: setup + preferences in one place) -->
 <section id="view-settings">
 <h2>Settings — setup and preferences</h2>
@@ -329,13 +337,17 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
     var h = t ? (state.histories[t] || []) : [];
     list.innerHTML = "";
     h.forEach(function (item, idx) { list.appendChild(renderItem(item, idx)); });
-    empty.hidden = h.length !== 0;
-    if (!t) empty.textContent = "No sessions yet. Create one in the sidebar.";
-    else if (!h.length) empty.textContent = "No questions yet in this session. Try: “What triggers PEM?”";
-    var askTitle = $("ask-title");
-    if (askTitle) askTitle.textContent = t || "No session yet";
+    if (t) {
+      empty.hidden = h.length !== 0;
+      if (!h.length) empty.textContent = "No questions yet in this session. Try: “What triggers PEM?”";
+      var askTitle = $("ask-title");
+      if (askTitle) askTitle.textContent = t;
+    } else {
+      empty.hidden = true;
+    }
     renderSubButton(t);
     renderSessionList();
+    route();
   }
   function isSubscribed(t) { return !!(t && state.subs && state.subs[t]); }
   function renderSubButton(t) {
@@ -423,7 +435,11 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
       persist(); renderHistory();
     }
     $("delete-dialog").close();
-    if (!current()) $("session-new").focus();
+    if (!current()) {
+      if (location.hash !== "#/home") location.hash = "#/home";
+      route();
+      $("session-new").focus();
+    }
   });
   $("menu-sub").addEventListener("click", function () {
     var t = current();
@@ -522,11 +538,17 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
   renderSimple();
 
   // ---- router ----
-  var views = { "/": "view-settings", "/ask": "view-ask", "/settings": "view-settings" };
+  var views = { "/": "view-settings", "/ask": "view-ask", "/settings": "view-settings", "/home": "view-home" };
+  var allViews = ["view-home", "view-settings", "view-ask"];
   function route() {
     var h = location.hash.replace(/^#/, "") || "/";
-    var id = views[h] || "view-settings";
-    Object.keys(views).forEach(function (k) { $(views[k]).hidden = views[k] !== id; });
+    var id;
+    if (sessions().length === 0) {
+      id = (h === "/settings") ? "view-settings" : "view-home";
+    } else {
+      id = views[h] || "view-settings";
+    }
+    allViews.forEach(function (vid) { $(vid).hidden = vid !== id; });
   }
   window.addEventListener("hashchange", route);
 

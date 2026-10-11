@@ -93,4 +93,7 @@ def test_session_menu_delete_with_confirm(page, mockup_url):
     page.locator("#delete-dialog[open]").wait_for()
     page.locator("#delete-confirm").click()
     assert page.locator("#session-list button").count() == 0
-    assert "No session yet" in page.locator("#ask-title").text_content()
+    # Delete the last session: home screen replaces the empty Ask state.
+    assert page.locator("#view-home").is_visible()
+    assert page.locator("#view-ask").is_hidden()
+    assert page.locator("#ask-form").is_hidden()
