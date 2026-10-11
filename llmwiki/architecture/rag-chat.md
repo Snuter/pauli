@@ -19,7 +19,7 @@ Guidelines: chunks-only system prompt, no general knowledge; every factual sente
 
 Unknown: `I don't know from your cached papers — [what is missing, what term to add, what to ask your doctor]`.[^tech-concept]
 
-Sessions: asking sessions are presentation-layer threads only. Rewrite → retrieve → generate is identical for every session against the shared global corpus; only the user-prompt history differs. No per-session index, buzzwords, strictness, or system prompt. The daily notify job only *reads* each session's history for matching — it never forks the corpus.
+Sessions: asking sessions are presentation-layer threads only. Rewrite → retrieve → generate is identical for every session against the shared global corpus; only the user-prompt history differs. No per-session index, terms, strictness, or system prompt. The daily notify job only *reads* each session's history for matching — it never forks the corpus.
 
 User view: [asking](/workflows/asking-question.md).
 

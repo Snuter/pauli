@@ -15,7 +15,8 @@ sources:
 
 Implements [data pipeline](/architecture/data-pipeline.md).[^impl-plan]
 
-* P0.1 `ingest/validate.py`: 1–5 terms, reject empty/1-char/`>50k`, narrow hint. Pure function taking hit-count callback — no HTTP inside. Verify `test_validate.py` (0 terms, 6 terms, empty, 1-char, broad-term hint).[^impl-plan]
+* P0.1 `questionanswering/extract.py`: `build_extraction_prompt(question, history)` + `parse_extraction_response(text)` + `extract_terms(question, history, chat_fn)`. No hit-count gate — normalize/lowercase/dedup only. Verify `test_extract.py` (splits, dedup, history in prompt, empty short-circuits).
+* P0.1b `index/terms.py`: `TermStore(max_terms=500, prune_freq="daily")` scheduled-cap LRU (add_many/touch/remove/mark_complete/set_limit defer eviction; prune_now/prune_due/maybe_prune enforce LRU down to cap on day/week/month cadence, default daily) + `stats()` (terms, digesting/complete, total/avg papers) + `get_db_stats(db_path)` (db bytes, papers/chunks/vectors, zeros when no DB). Verify `test_terms.py` (dedup, deferred eviction, cadence, stats).
 * P0.2 `ingest/europepmc.py`: OR-union search via `httpx`, per-term counts, paged full fetch, OA fullText/abstract, OA-only. Verify mocked HTTP, query + paging.[^impl-plan]
 * P0.3 `ingest/topics.py`: `topic_hash` + `last_sync` CRUD. Verify stable hash, round-trip.[^impl-plan]
 * P0.4 `ingest/pipeline.py`: fetch → raw files → `papers` rows, paged + resumable on PMCID. Verify 3 mocked papers, idempotent rerun.[^impl-plan]

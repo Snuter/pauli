@@ -13,14 +13,14 @@ sources:
 
 # Asking
 
-1. Ask in chat, e.g. `What triggers PEM?`[^user-journey]
-2. Short answer (`<150` words) with every fact linked to a Europe PMC paper `[PMCID]`.[^user-journey]
+1. Ask in chat, e.g. `What triggers PEM?`[^user-journey] The AI extracts search terms from the question + session history; new terms digest in the background while a fast slice answers immediately.
+2. Short answer (`<150` words) with every fact linked to a Europe PMC paper `[PMCID]`.[^user-journey] Answers from a still-digesting corpus are marked incomplete with digest progress and a manual `Refresh answer` button that replaces the answer in place.
 3. No answer in cached papers → honest unknown, never a guess: `I don't know from your cached papers — [what is missing, what term to add, what to ask your doctor]`.[^user-journey]
 4. Three-way split: no papers cached yet / papers cached but no answer / conflicting papers shown as both cited sides (no automatic contradiction detection in MVP).[^user-journey]
 
 ## Asking sessions
 
-* Multiple asking sessions share one global corpus (see [settings](/workflows/onboarding-buzzwords.md)). Only the user prompts / history differentiate sessions — no per-session system prompt, retrieval config, or buzzwords.
+* Multiple asking sessions share one global corpus (see [settings](/workflows/onboarding-buzzwords.md)). Only the user prompts / history differentiate sessions — no per-session system prompt, retrieval config, or terms.
 * Sessions are freely user-creatable. Seed examples: `ME/CFS therapies and details`, `ME/CFS cure research`. No other defaults. The sidebar lists sessions newest-first by creation timestamp (`sessions.created_at`, `ORDER BY created_at DESC`); after delete the newest remaining session becomes current. Renaming a session (Ask `Rename this session` button → `#rename-dialog` with prefilled title input, Save/Cancel) refreshes its timestamp so the edited session moves to the top — history and subscription are kept, only the title and position change. Any change to a session's data (asking, editing, moving or deleting a question, renaming, toggling its subscription) bumps that session to the top. Deleting a session (Ask `Delete this session` button → modal confirm) removes the session entirely, including seeds; deleting the last session shows the Home screen (welcome + disclaimer, Ask view fully hidden) prompting a new title in the sidebar.
 * Each session keeps its own Q&A history, auto-persisted on every Ask. Retrieval and strictness live under Initial Setup, simplicity under Preferences — all in Settings and global.
 * Each question has its own menu row (`Move question up/down`, `Edit question and rerun answer`, `Delete question` with modal confirm): moves swap entries and re-persist (boundary buttons disabled, doctor sheet follows new first question); edit re-runs retrieval + LLM in place and resets gating; delete removes Q+A session-locally.

@@ -131,17 +131,20 @@ dialog article footer button[type="submit"] { width: auto; }
 <p class="meta">Context window: retrieved passages are placed into your Ollama model's context window — lower strictness sends more text and needs a larger window. Usable context size depends on the model (each model has a fixed maximum) and on your hardware (a local model needs enough RAM/VRAM to hold it; cloud models follow the provider's limits). If answers get cut off, turn incoherent, or everything gets very slow, raise strictness to send less context, or switch to a model with a larger context window on hardware that can hold it.</p>
 </article>
 <article>
-<h3>Your topic (1–5 buzzwords, OR-union)</h3>
-<form id="buzz-form" class="no-print">
-<div class="grid">
-<input id="buzz-input" type="text" placeholder="e.g. myalgic encephalomyelitis">
-<button type="submit"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add</button>
-</div>
-<p id="buzz-hint" class="meta"></p>
-</form>
-<ul id="buzz-list"></ul>
-<p class="meta">Every asking session retrieves from this same shared corpus. No built-in default topics.</p>
-<button id="buzz-fetch" type="button"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Fetch open-access papers</button>
+<h3>Auto-collected topics (AI-extracted)</h3>
+<p class="meta">No manual buzzwords — the AI extracts search terms from each question plus session history. All terms feed one shared corpus.</p>
+<label class="no-print">Term limit <input id="terms-limit" type="number" min="10" max="5000" value="500"></label>
+<label>Auto-prune
+<select id="prune-freq">
+<option value="daily" selected>Every day</option>
+<option value="weekly">Every week</option>
+<option value="monthly">Every month</option>
+</select>
+</label>
+<p id="terms-limit-hint" class="meta">Default 500, pruned every day. The limit is enforced only on the auto-prune schedule (no per-term age check).</p>
+<p id="terms-count" class="meta"></p>
+<p id="terms-stats" class="meta"></p>
+<p id="prune-status" class="meta"></p>
 <p id="buzz-progress" class="meta"></p>
 </article>
 <article>
@@ -278,7 +281,8 @@ dialog article footer button[type="submit"] { width: auto; }
   "use strict";
   var SEEDS = ["ME/CFS therapies and details", "ME/CFS cure research"];
   var KEY = "pauli.mockup.v2";
-  var state = { histories: {}, created: {}, subs: {}, buzz: ["myalgic encephalomyelitis", "PEM"], mail: { to: "", smtp: "", from: "", freq: "weekly" } };
+  var PRUNE_WINDOWS = { daily: 86400000, weekly: 7 * 86400000, monthly: 30 * 86400000 };
+  var state = { histories: {}, created: {}, subs: {}, terms: [{ term: "myalgic encephalomyelitis", papers: 120, digesting: false }, { term: "pem", papers: 64, digesting: false }], termsLimit: 500, pruneFreq: "daily", lastPrune: null, mail: { to: "", smtp: "", from: "", freq: "weekly" } };
   var seeded = false;
   try {
     var raw = localStorage.getItem(KEY);
@@ -299,7 +303,14 @@ dialog article footer button[type="submit"] { width: auto; }
     if (!state.histories[t]) delete state.created[t];
   });
   if (!state.subs || typeof state.subs !== "object" || Array.isArray(state.subs)) state.subs = {};
-  if (!Array.isArray(state.buzz)) state.buzz = [];
+  if (!Array.isArray(state.terms)) {
+    if (Array.isArray(state.buzz)) {
+      state.terms = state.buzz.map(function (b) { return { term: String(b), papers: 0, digesting: false }; });
+    } else state.terms = [];
+  }
+  if (typeof state.termsLimit !== "number" || !(state.termsLimit >= 1)) state.termsLimit = 500;
+  if (PRUNE_WINDOWS[state.pruneFreq] == null) state.pruneFreq = "daily";
+  if (state.lastPrune != null && !(state.lastPrune >= 0)) state.lastPrune = null;
   if (!state.mail || typeof state.mail !== "object") state.mail = { to: "", smtp: "", from: "", freq: "weekly" };
   if (["weekly", "daily", "monthly"].indexOf(state.mail.freq) === -1) state.mail.freq = "weekly";
   if (!state.current || !state.histories[state.current]) state.current = sessions()[0] || null;
@@ -375,8 +386,8 @@ dialog article footer button[type="submit"] { width: auto; }
     return {
       kind: "unknown",
       html: "I don\u2019t know from your cached papers \u2014 what is missing: no matching passages; " +
-        "term to add: try a narrower buzzword; what to ask your doctor: bring this exact question.",
-      plain: "I don't know from your cached papers — no matching passages. Try a narrower buzzword.",
+        "digest status: terms extracted and digesting in the background; what to ask your doctor: bring this exact question.",
+      plain: "I don't know from your cached papers — no matching passages yet. New terms are digesting; Refresh the answer after digest.",
       cite: "—", unknown: "No matching cached papers for: " + q,
       doctor: "Is there any research you know on: " + q + "?"
     };
@@ -490,6 +501,31 @@ dialog article footer button[type="submit"] { width: auto; }
       if (item.gate.crisis) { var note = document.createElement("p"); note.className = "meta disclaimer"; note.textContent = "Crisis resources: call your local emergency number or crisis helpline."; card.appendChild(note); }
       a.appendChild(card);
     } else {
+      if (item.incomplete) {
+        var warn = document.createElement("div");
+        warn.className = "disclaimer"; warn.setAttribute("data-testid", "incomplete-badge");
+        var badge = document.createElement("p");
+        badge.className = "meta";
+        badge.textContent = "Incomplete answer — new papers still digesting.";
+        warn.appendChild(badge);
+        var prog = document.createElement("p");
+        prog.className = "meta"; prog.setAttribute("data-testid", "digest-progress");
+        prog.textContent = item.progress || "Digesting…";
+        warn.appendChild(prog);
+        var rb = document.createElement("button");
+        rb.type = "button"; rb.className = "outline"; rb.setAttribute("data-testid", "refresh-answer");
+        rb.textContent = "Refresh answer";
+        rb.addEventListener("click", function () {
+          item.incomplete = false; item.progress = "";
+          (item.terms || []).forEach(function (rt) {
+            state.terms.forEach(function (e) { if (e.term === rt) e.digesting = false; });
+          });
+          touchSession(current());
+          persist(); renderHistory(); renderBuzz(); scrollToItem(idx);
+        });
+        warn.appendChild(rb);
+        a.appendChild(warn);
+      }
       var d = document.createElement("div"); d.innerHTML = item.html; a.appendChild(d);
     }
     li.appendChild(renderQuestionMenu(item, idx));
@@ -586,13 +622,20 @@ dialog article footer button[type="submit"] { width: auto; }
     if (!t) return;
     var q = input.value.trim();
     if (!q) return;
+    var h = state.histories[t] || [];
+    var past = h.map(function (x) { return x.q; });
+    var newTerms = mockExtract(q + " " + past.slice(-2).join(" "));
+    var added = addAutoTerms(newTerms);
     var ans = answerFor(q);
     var entry = { q: q, html: ans.html, plain: ans.plain, cite: ans.cite,
       unknown: ans.unknown, doctor: ans.doctor, kind: ans.kind,
-      gate: ans.gate || null, revealed: false };
+      gate: ans.gate || null, revealed: false,
+      incomplete: added.length > 0, terms: newTerms,
+      progress: added.length ? ("Digesting " + added.length + " new term(s): " + added.join(", ")) : "" };
     state.histories[t].push(entry);
     touchSession(t);
     persist(); input.value = "";
+    renderBuzz();
     renderHistory();
     scrollToItem();
   });
@@ -740,26 +783,90 @@ dialog article footer button[type="submit"] { width: auto; }
       $("sheet-doctor").textContent = "—";
     }
   }
-  // ---- setup buzzwords ----
-  var BROAD = ["pain", "fatigue", "cancer", "virus", "health"];
-  function renderBuzz() {
-    var ul = $("buzz-list"); ul.innerHTML = "";
-    state.buzz.forEach(function (b) {
-      var li = document.createElement("li"); li.textContent = b; ul.appendChild(li);
+  // ---- auto-collected terms (AI-extracted, no manual input) ----
+  var STOP = ["what", "when", "where", "which", "with", "from", "about", "does", "are", "the", "and", "for", "how", "why", "can", "you"];
+  function mockExtract(q) {
+    var words = String(q || "").toLowerCase().replace(/[^a-z0-9\s-]/g, " ").split(/\s+/);
+    var seen = {}, out = [];
+    words.forEach(function (w) {
+      w = w.trim();
+      if (w.length < 4 || STOP.indexOf(w) !== -1 || seen[w]) return;
+      seen[w] = 1; out.push(w);
     });
+    return out.slice(0, 5);
   }
-  $("buzz-form").addEventListener("submit", function (e) {
-    e.preventDefault();
-    var v = $("buzz-input").value.trim(), hint = $("buzz-hint");
-    if (!v) { hint.textContent = "Empty term — type a buzzword first."; return; }
-    if (v.length < 3) { hint.textContent = "Too short — narrow-down hint: use at least 3 characters."; return; }
-    if (BROAD.indexOf(v.toLowerCase()) !== -1) { hint.textContent = "Too broad (>50k hits) — narrow it down, e.g. add a second word."; return; }
-    if (state.buzz.length >= 5) { hint.textContent = "Maximum 5 buzzwords."; return; }
-    state.buzz.push(v); persist(); $("buzz-input").value = ""; hint.textContent = "";
-    renderBuzz();
+  function pruneDue(now) {
+    if (state.terms.length <= state.termsLimit) return false;
+    if (state.lastPrune == null) return true;
+    return (now - state.lastPrune) >= (PRUNE_WINDOWS[state.pruneFreq] || PRUNE_WINDOWS.daily);
+  }
+  function maybePrune(now) {
+    now = (typeof now === "number") ? now : Date.now();
+    if (!pruneDue(now)) return [];
+    var pruned = [];
+    while (state.terms.length > state.termsLimit) {
+      var t = state.terms.pop();
+      if (t) pruned.push(t.term);
+    }
+    state.lastPrune = now;
+    if (pruned.length) persist();
+    return pruned;
+  }
+  function addAutoTerms(terms) {
+    var added = [];
+    terms.forEach(function (raw) {
+      var t = String(raw || "").trim().toLowerCase();
+      if (t.length < 2) return;
+      var found = null;
+      state.terms.forEach(function (e) { if (e.term === t) found = e; });
+      if (found) { found.digesting = found.digesting; return; }
+      state.terms.unshift({ term: t, papers: 12, digesting: true });
+      added.push(t);
+    });
+    if (added.length) persist();
+    maybePrune();
+    return added;
+  }
+  function renderBuzz() {
+    maybePrune();
+    var total = state.terms.length;
+    var digesting = state.terms.filter(function (e) { return e.digesting; }).length;
+    var complete = total - digesting;
+    var papers = state.terms.reduce(function (s, e) { return s + (e.papers || 0); }, 0);
+    var avg = total ? (papers / total) : 0;
+    var over = Math.max(0, total - state.termsLimit);
+    var count = $("terms-count");
+    if (count) count.textContent = total + " auto-collected term(s) (limit " + state.termsLimit + ").";
+    var stats = $("terms-stats");
+    if (stats) stats.textContent = "Papers: " + papers + " total, " + avg.toFixed(1) +
+      " avg/term; " + digesting + " digesting, " + complete + " complete; " +
+      "DB: n/a in mockup (local SQLite when backend lands)" +
+      (over ? "; " + over + " over limit until next prune" : ".");
+    var pstat = $("prune-status");
+    if (pstat) {
+      var last = (state.lastPrune != null) ? new Date(state.lastPrune).toLocaleDateString() : "never";
+      pstat.textContent = "Auto-prune every " + state.pruneFreq.replace("daily", "day").replace("weekly", "week").replace("monthly", "month") + " (last: " + last + ").";
+    }
+    var prog = $("buzz-progress");
+    if (prog) {
+      prog.textContent = digesting ? ("Digesting " + digesting + " term(s) in the background…") : (total + " auto-collected term(s).");
+    }
+    var lim = $("terms-limit");
+    if (lim && String(lim.value) !== String(state.termsLimit)) lim.value = state.termsLimit;
+    var freq = $("prune-freq");
+    if (freq && freq.value !== state.pruneFreq) freq.value = state.pruneFreq;
+  }
+  var termsLimitEl = $("terms-limit");
+  if (termsLimitEl) termsLimitEl.addEventListener("change", function () {
+    var n = parseInt(termsLimitEl.value, 10);
+    if (!(n >= 1)) { $("terms-limit-hint").textContent = "Enter 1 or more (default 500)."; return; }
+    if (n > 5000) n = 5000;
+    state.termsLimit = n; persist(); renderBuzz();
   });
-  $("buzz-fetch").addEventListener("click", function () {
-    $("buzz-progress").textContent = "Fetching all matching open-access papers (paged, resumable)… done (mock).";
+  var pruneFreqEl = $("prune-freq");
+  if (pruneFreqEl) pruneFreqEl.addEventListener("change", function () {
+    if (PRUNE_WINDOWS[pruneFreqEl.value] == null) return;
+    state.pruneFreq = pruneFreqEl.value; persist(); renderBuzz();
   });
 
   // ---- settings ----
@@ -856,6 +963,7 @@ dialog article footer button[type="submit"] { width: auto; }
     }
     allViews.forEach(function (vid) { $(vid).hidden = vid !== id; });
     if (id === "view-settings") {
+      renderBuzz(); renderMail();
       var anchor = (h === "/settings/preferences") ? "preferences" : "setup";
       var el = document.getElementById(anchor);
       if (el && typeof el.scrollIntoView === "function") el.scrollIntoView();

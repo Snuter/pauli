@@ -21,7 +21,7 @@ Implements [RAG](/architecture/rag-chat.md) + [language](/architecture/language-
 * P1.4 `questionanswering/abstain.py`: unknown template, 3 branches, never guess. Verify `test_abstain.py`.[^impl-plan]
 * P1.5 `questionanswering/language.py`: simplicity slider only (10–15, default 12), same citations. Verify `textstat` + preservation.[^impl-plan]
 * P1.6 `questionanswering/service.py`: rewrite→retrieve→generate→check→abstain→render. Verify mocked e2e incl. misconfiguration error.[^impl-plan]
-* P1.7 `web/app.py` + `routes_topics.py` + `routes_chat.py`: FastAPI + Jinja + HTMX chat, toggles + sliders + buzzword form. Verify `What triggers PEM?` → `<150` words, 3+ links or unknown; UI smoke via `tests/ui/` (playwright: nav, example answer, citation links resolve).[^impl-plan]
+* P1.7 `web/app.py` + `routes_topics.py` + `routes_chat.py`: FastAPI + Jinja + HTMX chat, toggles + sliders + auto-collected topics list + incomplete/refresh. Verify `What triggers PEM?` → `<150` words, 3+ links or unknown; UI smoke via `tests/ui/` (playwright: nav, example answer, citation links resolve).[^impl-plan]
 * P1-gate: `pytest` green, zero invented citations.[^impl-plan]
 
 [^impl-plan]: P.A.U.L.I. Implementation Plan
