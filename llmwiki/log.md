@@ -1,5 +1,8 @@
 # LLMWIKI Update Log
 
+## 2026-10-11
+* **Update**: Added per-session rename — Ask `Rename this session` button (`#menu-rename`, pencil icon) beside Subscribe/Doctor/Delete opens `#rename-dialog` (prefilled `#rename-input`, `maxlength=60`, Save/Cancel); trims, rejects empty/duplicate titles with a hint (dialog stays open), preserves sidebar order, history, and subscription via `renameSession()`. `ui-mockup/index.html` + `tests/ui/test_mockup_rename.py`; `workflows/asking-question.md` / `architecture/tracker-export.md` updated.
+
 ## 2026-10-10
 * **Update**: Moved per-session actions into two side-by-side icon buttons below the Ask title — removed Doctor top-nav entry and sidebar `#session-delete`; buttons are `Doctor summary / print` (Pico `#doctor-dialog` with 1-page sheet + Print) and `Delete this session` (Pico `#delete-dialog` confirm, removes session entirely, empty state prompts new title). `ui-mockup/index.html` reworked (seed-once init, `sessions()` from keys, null-safe `current()`); `tests/ui/test_mockup_smoke.py` drives doctor/delete via the buttons; `workflows/asking-question.md` / `tracking-doctor-visit.md` / `architecture/tracker-export.md` / `testing.md` updated.
 * **Update**: Removed the `Ask` top-nav entry — sidebar session buttons are the only entry point to chat (click selects, persists `state.current`, routes to `#/ask`; Create opens the new session the same way). `#/ask` remains as the internal chat route with no nav item. `tests/ui/test_mockup_smoke.py` asserts no `Ask` nav link and that a sidebar click opens the Ask view; `workflows/asking-question.md` updated.

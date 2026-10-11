@@ -49,6 +49,7 @@ a:has(.icon), button:has(.icon), aside h3:has(.icon) { white-space: nowrap; }
 #menu-delete { color: var(--pico-del-color, #d93526); border-color: currentColor; }
 #menu-sub[aria-pressed="true"] { background: var(--pico-primary-background); border-color: var(--pico-primary-background); color: var(--pico-primary-inverse); }
 dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
+dialog article footer button[type="submit"] { width: auto; }
 @media print { aside, header nav, .no-print { display: none !important; } .layout { display: block; } .site-footer { position: static; border-top: none; padding: .5rem 0; } body { padding-bottom: 0; } }
 @media (max-width: 800px) { .layout { grid-template-columns: 170px 1fr; gap: 1rem; padding: 0 .5rem; } .site-header { padding: 0 .5rem; } .site-header nav { margin-left: calc(170px + 1rem); } }
 </style>
@@ -154,6 +155,7 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 <div class="no-print session-menu">
 <button id="menu-doctor" type="button" class="outline" title="Doctor summary / print" aria-label="Doctor summary / print"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg></button>
 <button id="menu-sub" type="button" class="outline" title="Subscribe to email updates for this session" aria-label="Subscribe to email updates for this session" aria-pressed="false"></button>
+<button id="menu-rename" type="button" class="outline" title="Rename this session" aria-label="Rename this session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>
 <button id="menu-delete" type="button" class="outline" title="Delete this session" aria-label="Delete this session"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>
 </div>
 <p class="meta">Multiple sessions share one corpus. Retrieval, strictness and simplicity live under Settings and stay global.</p>
@@ -179,6 +181,20 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 <footer>
 <button id="delete-cancel" type="button" class="secondary">Cancel</button>
 <button id="delete-confirm" type="button">Delete</button>
+</footer>
+</article>
+</dialog>
+
+<dialog id="rename-dialog">
+<article>
+<header><h3>Rename session</h3></header>
+<form id="rename-form">
+<label>Title <input id="rename-input" type="text" maxlength="60" autocomplete="off"></label>
+<p id="rename-hint" class="meta"></p>
+</form>
+<footer>
+<button id="rename-cancel" type="button" class="secondary">Cancel</button>
+<button id="rename-confirm" type="submit" form="rename-form">Save</button>
 </footer>
 </article>
 </dialog>
@@ -440,6 +456,39 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
       route();
       $("session-new").focus();
     }
+  });
+  function renameSession(oldT, newT) {
+    var histories = {};
+    sessions().forEach(function (t) {
+      histories[t === oldT ? newT : t] = state.histories[t];
+    });
+    state.histories = histories;
+    if (state.subs && state.subs[oldT]) {
+      delete state.subs[oldT];
+      state.subs[newT] = true;
+    }
+    state.current = newT;
+    persist(); renderHistory();
+  }
+  $("menu-rename").addEventListener("click", function () {
+    var t = current();
+    if (!t) return;
+    $("rename-input").value = t;
+    $("rename-hint").textContent = "";
+    $("rename-dialog").showModal();
+    $("rename-input").focus();
+    $("rename-input").select();
+  });
+  $("rename-cancel").addEventListener("click", function () { $("rename-dialog").close(); });
+  $("rename-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var t = current();
+    if (!t) { $("rename-dialog").close(); return; }
+    var next = $("rename-input").value.trim().slice(0, 60);
+    if (!next) { $("rename-hint").textContent = "Empty title — type a name first."; return; }
+    if (next !== t && state.histories[next]) { $("rename-hint").textContent = "A session with this title already exists."; return; }
+    $("rename-dialog").close();
+    if (next !== t) renameSession(t, next);
   });
   $("menu-sub").addEventListener("click", function () {
     var t = current();
