@@ -31,6 +31,10 @@ aside .no-print { display: flex; flex-direction: column; gap: .4rem; }
 .blur { filter: blur(6px); user-select: none; pointer-events: none; }
 .gate-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
 .meta { font-size: .85rem; opacity: .8; }
+.disclaimer { opacity: 1; font-size: .9rem; font-weight: 600; background: var(--pico-mark-background-color, #fff3bf); color: var(--pico-mark-color, #433d00); border-left: 3px solid currentColor; padding: .4rem .6rem; border-radius: .25rem; }
+body { padding-bottom: 4rem; }
+.site-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--pico-background-color, #fff); border-top: 1px solid var(--pico-muted-border-color); padding: .5rem 1rem; z-index: 10; }
+.site-footer .disclaimer { max-width: 1100px; margin: 0 auto; }
 .icon { width: 1em; height: 1em; vertical-align: -0.125em; margin-right: .4rem; }
 .brand { display: flex; flex-direction: column; align-items: flex-start; gap: .15rem; }
 .brand-text { display: block; line-height: 1.25; }
@@ -45,7 +49,7 @@ a:has(.icon), button:has(.icon), aside h3:has(.icon) { white-space: nowrap; }
 #menu-delete { color: var(--pico-del-color, #d93526); border-color: currentColor; }
 #menu-sub[aria-pressed="true"] { background: var(--pico-primary-background); border-color: var(--pico-primary-background); color: var(--pico-primary-inverse); }
 dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
-@media print { aside, header nav, .no-print { display: none !important; } .layout { display: block; } }
+@media print { aside, header nav, .no-print { display: none !important; } .layout { display: block; } .site-footer { position: static; border-top: none; padding: .5rem 0; } body { padding-bottom: 0; } }
 @media (max-width: 800px) { .layout { grid-template-columns: 170px 1fr; gap: 1rem; padding: 0 .5rem; } .site-header { padding: 0 .5rem; } .site-header nav { margin-left: calc(170px + 1rem); } }
 </style>
 </head>
@@ -69,8 +73,6 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 </div>
 </div>
 <ul id="session-list"></ul>
-<hr>
-<p class="meta">Research info only,<br>not medical advice.</p>
 </aside>
 
 <main>
@@ -78,7 +80,6 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 <section id="view-home" hidden>
 <h2>Welcome to P.A.U.L.I.</h2>
 <p>Patient-centered AI for Understanding Literature and Insights — ask questions about open-access papers on your topic, with citations for every answer.</p>
-<p class="meta">Research info only, not medical advice.</p>
 <p>To get started, create your first research session in the sidebar under Research.</p>
 </section>
 
@@ -169,6 +170,8 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 </main>
 </div>
 
+<footer class="site-footer"><p class="meta disclaimer">Research info only — not medical advice. Always talk to your doctor about your care.</p></footer>
+
 <dialog id="delete-dialog">
 <article>
 <header><h3>Delete session?</h3></header>
@@ -190,7 +193,7 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 <p><strong>Citations:</strong> <span id="sheet-cite">—</span></p>
 <p><strong>Unknowns:</strong> <span id="sheet-unknown">—</span></p>
 <p><strong>Ask your doctor:</strong> <span id="sheet-doctor">—</span></p>
-<p class="meta">Research info only, not medical advice. Condensed 1-page print view per session.</p>
+<p class="meta">Condensed 1-page print view per session.</p>
 </article>
 <footer>
 <button id="doctor-close" type="button" class="secondary">Close</button>
@@ -378,19 +381,16 @@ dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
       var why = document.createElement("p"); why.className = "meta"; why.hidden = true;
       why.textContent = "Gated because it may mention " + item.gate.cat + ". Nothing reveals without your click.";
       var body = document.createElement("div"); body.className = "blur"; body.innerHTML = item.html;
-      var note = document.createElement("p"); note.className = "meta";
-      note.textContent = "Research info only, not medical advice." + (item.gate.crisis ? " Crisis resources: call your local emergency number or crisis helpline." : "");
       bShow.onclick = function () { item.revealed = true; persist(); renderHistory(); };
       bSkip.onclick = function () { card.innerHTML = ""; var s = document.createElement("p"); s.className = "meta"; s.textContent = "Skipped gated answer (" + item.gate.cat + ")."; card.appendChild(s); };
       bWhy.onclick = function () { why.hidden = !why.hidden; };
       var acts = document.createElement("div"); acts.className = "gate-actions no-print";
       acts.appendChild(bShow); acts.appendChild(bSkip); acts.appendChild(bWhy);
-      card.appendChild(p); card.appendChild(acts); card.appendChild(why); card.appendChild(body); card.appendChild(note);
+      card.appendChild(p); card.appendChild(acts); card.appendChild(why); card.appendChild(body);
+      if (item.gate.crisis) { var note = document.createElement("p"); note.className = "meta disclaimer"; note.textContent = "Crisis resources: call your local emergency number or crisis helpline."; card.appendChild(note); }
       a.appendChild(card);
     } else {
       var d = document.createElement("div"); d.innerHTML = item.html; a.appendChild(d);
-      var n = document.createElement("p"); n.className = "meta";
-      n.textContent = "Research info only, not medical advice."; a.appendChild(n);
     }
     li.appendChild(a);
     return li;
