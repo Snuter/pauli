@@ -18,7 +18,7 @@ The user chooses local models (private, no key) or Ollama cloud models
 UI tests live in `tests/ui/` and run against the static `ui-mockup/`.
 
 ```bash
-poetry install --with dev
+poetry install --with dev --no-root
 poetry run python -m playwright install chromium
 poetry run pytest tests/ui -v
 ```
