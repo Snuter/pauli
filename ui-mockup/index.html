@@ -36,7 +36,7 @@ aside .no-print { display: flex; flex-direction: column; gap: .4rem; }
 .ask-sticky-top .session-menu { margin: 0; }
 .chat { display: flex; flex-direction: column; gap: .75rem; }
 #history-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
-#history-list li { margin: 0; scroll-margin-top: .5rem; scroll-margin-bottom: 5rem; }
+#history-list li { margin: 0; scroll-margin-top: .5rem; scroll-margin-bottom: 5rem; border: 1px solid var(--pico-muted-border-color); border-radius: .5rem; padding: .75rem; }
 .q { font-weight: 600; }
 .a { margin-top: .25rem; }
 .blur { filter: blur(6px); user-select: none; pointer-events: none; }
@@ -57,7 +57,10 @@ a:has(.icon), button:has(.icon), aside h3:has(.icon) { white-space: nowrap; }
 .session-menu { margin: .5rem 0 .75rem; display: flex; gap: .5rem; flex-wrap: wrap; }
 .session-menu button { padding: .4rem .6rem; }
 .session-menu button .icon { margin-right: 0; }
-#menu-delete { color: var(--pico-del-color, #d93526); border-color: currentColor; }
+.q-actions { margin: .4rem 0 0; display: flex; gap: .4rem; flex-wrap: wrap; }
+.q-actions button { padding: .25rem .5rem; font-size: .8rem; }
+.q-actions button .icon { margin-right: 0; }
+#menu-delete, #qdelete-confirm, .q-actions button[data-act="del"] { color: var(--pico-del-color, #d93526); border-color: currentColor; }
 #menu-sub[aria-pressed="true"] { background: var(--pico-primary-background); border-color: var(--pico-primary-background); color: var(--pico-primary-inverse); }
 dialog article footer { display: flex; gap: .5rem; justify-content: flex-end; }
 dialog article footer button[type="submit"] { width: auto; }
@@ -218,6 +221,31 @@ dialog article footer button[type="submit"] { width: auto; }
 </article>
 </dialog>
 
+<dialog id="qedit-dialog">
+<article>
+<header><h3>Edit question & rerun answer</h3></header>
+<form id="qedit-form">
+<label>Question <input id="qedit-input" type="text" maxlength="500" autocomplete="off"></label>
+<p id="qedit-hint" class="meta"></p>
+</form>
+<footer>
+<button id="qedit-cancel" type="button" class="secondary">Cancel</button>
+<button id="qedit-confirm" type="submit" form="qedit-form">Save & rerun</button>
+</footer>
+</article>
+</dialog>
+
+<dialog id="qdelete-dialog">
+<article>
+<header><h3>Delete question?</h3></header>
+<p id="qdelete-dialog-text">Delete this question?</p>
+<footer>
+<button id="qdelete-cancel" type="button" class="secondary">Cancel</button>
+<button id="qdelete-confirm" type="button">Delete</button>
+</footer>
+</article>
+</dialog>
+
 <dialog id="doctor-dialog">
 <article>
 <header><h3>Doctor visit — 1-page sheet</h3></header>
@@ -267,6 +295,9 @@ dialog article footer button[type="submit"] { width: auto; }
     mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
     sub: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
     trash: '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/>',
+    up: '<path d="M12 19V5M5 12l7-7 7 7"/>',
+    down: '<path d="M12 5v14M5 12l7 7 7-7"/>',
+    edit: '<path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>',
     printer: '<path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/>'
   };
   function makeIcon(name) {
@@ -428,8 +459,72 @@ dialog article footer button[type="submit"] { width: auto; }
     } else {
       var d = document.createElement("div"); d.innerHTML = item.html; a.appendChild(d);
     }
+    li.appendChild(renderQuestionMenu(item, idx));
     li.appendChild(a);
     return li;
+  }
+  function renderQuestionMenu(item, idx) {
+    var t = current();
+    var h = t ? (state.histories[t] || []) : [];
+    var wrap = document.createElement("div");
+    wrap.className = "q-actions no-print";
+    function menuButton(act, label, icon, disabled) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "outline";
+      b.setAttribute("data-act", act);
+      b.setAttribute("aria-label", label); b.title = label;
+      if (disabled) b.disabled = true;
+      b.appendChild(makeIcon(icon));
+      return b;
+    }
+    var bUp = menuButton("up", "Move question up", "up", idx <= 0);
+    var bDown = menuButton("down", "Move question down", "down", idx >= h.length - 1);
+    var bEdit = menuButton("edit", "Edit question and rerun answer", "edit", false);
+    var bDel = menuButton("del", "Delete question", "trash", false);
+    bUp.addEventListener("click", function () { moveQuestion(idx, -1); });
+    bDown.addEventListener("click", function () { moveQuestion(idx, 1); });
+    bEdit.addEventListener("click", function () { openQuestionEdit(idx); });
+    bDel.addEventListener("click", function () { openQuestionDelete(idx); });
+    wrap.appendChild(bUp); wrap.appendChild(bDown); wrap.appendChild(bEdit); wrap.appendChild(bDel);
+    return wrap;
+  }
+  function moveQuestion(idx, delta) {
+    var t = current();
+    if (!t) return;
+    var h = state.histories[t] || [];
+    var j = idx + delta;
+    if (idx < 0 || j < 0 || idx >= h.length || j >= h.length) return;
+    var tmp = h[idx]; h[idx] = h[j]; h[j] = tmp;
+    persist(); renderHistory(); scrollToItem(j);
+    var items = list.children;
+    if (items[j]) {
+      var btn = items[j].querySelector('[data-act="' + (delta < 0 ? "up" : "down") + '"]');
+      if (btn && !btn.disabled && typeof btn.focus === "function") btn.focus();
+    }
+  }
+  var qeditIdx = -1, qdeleteIdx = -1;
+  function openQuestionEdit(idx) {
+    var t = current();
+    if (!t) return;
+    var h = state.histories[t] || [];
+    if (idx < 0 || idx >= h.length) return;
+    qeditIdx = idx;
+    $("qedit-input").value = h[idx].q;
+    $("qedit-hint").textContent = "";
+    $("qedit-dialog").showModal();
+    $("qedit-input").focus();
+    $("qedit-input").select();
+  }
+  function openQuestionDelete(idx) {
+    var t = current();
+    if (!t) return;
+    var h = state.histories[t] || [];
+    if (idx < 0 || idx >= h.length) return;
+    qdeleteIdx = idx;
+    var q = h[idx].q || "";
+    if (q.length > 80) q = q.slice(0, 80) + "…";
+    $("qdelete-dialog-text").textContent = 'Delete question "' + q + '"? Its answer will be removed too.';
+    $("qdelete-dialog").showModal();
   }
   function scrollToItem(idx) {
     var main = document.querySelector(".layout > main");
@@ -530,6 +625,35 @@ dialog article footer button[type="submit"] { width: auto; }
     if (next !== t && state.histories[next]) { $("rename-hint").textContent = "A session with this title already exists."; return; }
     $("rename-dialog").close();
     if (next !== t) renameSession(t, next);
+  });
+  $("qedit-cancel").addEventListener("click", function () { $("qedit-dialog").close(); qeditIdx = -1; });
+  $("qedit-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var t = current();
+    if (!t || qeditIdx < 0) { $("qedit-dialog").close(); qeditIdx = -1; return; }
+    var h = state.histories[t] || [];
+    if (qeditIdx >= h.length) { $("qedit-dialog").close(); qeditIdx = -1; return; }
+    var next = $("qedit-input").value.trim().slice(0, 500);
+    if (!next) { $("qedit-hint").textContent = "Empty question — type a question first."; return; }
+    var ans = answerFor(next);
+    h[qeditIdx] = { q: next, html: ans.html, plain: ans.plain, cite: ans.cite,
+      unknown: ans.unknown, doctor: ans.doctor, kind: ans.kind,
+      gate: ans.gate || null, revealed: false };
+    var idx = qeditIdx;
+    qeditIdx = -1;
+    $("qedit-dialog").close();
+    persist(); renderHistory(); scrollToItem(idx);
+  });
+  $("qdelete-cancel").addEventListener("click", function () { $("qdelete-dialog").close(); qdeleteIdx = -1; });
+  $("qdelete-confirm").addEventListener("click", function () {
+    var t = current();
+    if (t && qdeleteIdx >= 0) {
+      var h = state.histories[t] || [];
+      if (qdeleteIdx < h.length) h.splice(qdeleteIdx, 1);
+      persist(); renderHistory();
+    }
+    qdeleteIdx = -1;
+    $("qdelete-dialog").close();
   });
   $("menu-sub").addEventListener("click", function () {
     var t = current();
