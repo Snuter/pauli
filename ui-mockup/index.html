@@ -594,7 +594,7 @@ dialog article footer button[type="submit"] { width: auto; }
   renderSimple();
 
   // ---- router ----
-  var views = { "/": "view-settings", "/ask": "view-ask", "/settings": "view-settings", "/home": "view-home" };
+  var views = { "/": "view-home", "/ask": "view-ask", "/settings": "view-settings", "/home": "view-home" };
   var allViews = ["view-home", "view-settings", "view-ask"];
   function route() {
     var h = location.hash.replace(/^#/, "") || "/";
@@ -602,7 +602,7 @@ dialog article footer button[type="submit"] { width: auto; }
     if (sessions().length === 0) {
       id = (h === "/settings") ? "view-settings" : "view-home";
     } else {
-      id = views[h] || "view-settings";
+      id = views[h] || "view-home";
     }
     allViews.forEach(function (vid) { $(vid).hidden = vid !== id; });
   }

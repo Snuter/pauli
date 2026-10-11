@@ -3,8 +3,16 @@
 import re
 
 
-def test_settings_visible_by_default(page, mockup_url):
+def test_home_visible_by_default(page, mockup_url):
     page.goto(mockup_url)
+    heading = page.get_by_role("heading", name="Welcome to P.A.U.L.I.")
+    heading.wait_for()
+    assert heading.is_visible()
+    assert page.locator("#view-home").is_visible()
+
+
+def test_settings_reachable(page, mockup_url):
+    page.goto(f"{mockup_url}#/settings")
     heading = page.get_by_role("heading", name="Settings — setup and preferences")
     heading.wait_for()
     assert heading.is_visible()
