@@ -71,3 +71,7 @@ For multi-step tasks, state a brief plan:
 ```
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+### 5. Keep the llmwiki up to date
+
+**When discussion or changes behavior. Always update the llmwiki/.**
