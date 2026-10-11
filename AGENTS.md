@@ -74,4 +74,4 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ### 5. Keep the llmwiki up to date
 
-**When discussion or changes behavior. Always update the llmwiki/.**
+**When discussing or changing behavior. Always update the llmwiki/.**
