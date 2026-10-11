@@ -1,6 +1,7 @@
 # LLMWIKI Update Log
 
 ## 2026-10-11
+* **Update**: Added `Test Ollama` setup check — button in the Ollama setup article (`ui-mockup/index.html`: `#ollama-hello` + `#ollama-hello-status`) posts `Say hi briefly.` to the configured host/model (`/api/chat`, `Bearer` key in cloud mode, 15s timeout) and shows the model's greeting or a fail-closed inline error. `tests/ui/test_ollama_hello.py` (mocked greeting, missing-model, unreachable-host); `workflows/onboarding-buzzwords.md` / `architecture/testing.md` updated.
 * **Update**: Split Settings into Initial Setup (`#setup`: Ollama, strictness, buzzwords, optional subscription email) + Preferences (`#preferences`: sensitivity, simplicity) on one page with anchor nav; `/` defaults to Settings. `ui-mockup/index.html` + `tests/ui/test_mockup_smoke.py`; `workflows/onboarding-buzzwords.md` / `sensitive-gating.md` / `language-toggle.md` / `tracking-doctor-visit.md` / `architecture/testing.md` updated.
 * **Update**: Added per-session rename — Ask `Rename this session` button (`#menu-rename`, pencil icon) beside Subscribe/Doctor/Delete opens `#rename-dialog` (prefilled `#rename-input`, `maxlength=60`, Save/Cancel); trims, rejects empty/duplicate titles with a hint (dialog stays open), preserves sidebar order, history, and subscription via `renameSession()`. `ui-mockup/index.html` + `tests/ui/test_mockup_rename.py`; `workflows/asking-question.md` / `architecture/tracker-export.md` updated.
 

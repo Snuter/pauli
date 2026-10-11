@@ -106,6 +106,8 @@ dialog article footer button[type="submit"] { width: auto; }
 <label>API key (cloud only) <input id="ollama-key" type="password" placeholder="stored locally only"></label>
 </div>
 <p id="ollama-warn" class="meta">Without the configured model (or cloud key for cloud) the app reports misconfiguration instead of answering.</p>
+<button id="ollama-hello" type="button">Test Ollama</button>
+<p id="ollama-hello-status" class="meta" role="status"></p>
 </article>
 <article>
 <h3>Retrieval strictness</h3>
@@ -597,6 +599,49 @@ dialog article footer button[type="submit"] { width: auto; }
   var strict = $("strict");
   strict.addEventListener("input", function () { $("strict-val").textContent = strict.value; });
   renderSimple();
+
+  // ---- ollama setup test ("Test Ollama") ----
+  var helloBtn = $("ollama-hello"), helloStatus = $("ollama-hello-status");
+  function helloMode() {
+    var checked = document.querySelector('input[name="mode"]:checked');
+    return checked ? checked.value : "local";
+  }
+  function helloSetStatus(text) { if (helloStatus) helloStatus.textContent = text; }
+  if (helloBtn) helloBtn.addEventListener("click", function () {
+    var host = ($("ollama-host") && $("ollama-host").value.trim()) || "http://localhost:11434";
+    host = host.replace(/\/+$/, "");
+    var model = ($("ollama-chat") && $("ollama-chat").value.trim()) || "";
+    var mode = helloMode();
+    var key = ($("ollama-key") && $("ollama-key").value.trim()) || "";
+    if (!model) { helloSetStatus("No chat model configured — enter a Chat model first."); return; }
+    if (mode === "cloud" && !key) { helloSetStatus("Cloud key missing — enter your API key first."); return; }
+    helloBtn.disabled = true;
+    helloSetStatus("Saying hi…");
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 15000);
+    var headers = { "Content-Type": "application/json" };
+    if (mode === "cloud" && key) headers["Authorization"] = "Bearer " + key;
+    fetch(host + "/api/chat", {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({ model: model, stream: false, messages: [{ role: "user", content: "Say hi briefly." }] }),
+      signal: ctrl.signal
+    }).then(function (res) {
+      if (!res.ok) throw new Error("bad status " + res.status);
+      return res.json();
+    }).then(function (data) {
+      var text = ((data && data.message && data.message.content) || (data && data.content)) || "";
+      text = String(text).trim();
+      helloSetStatus(text ? "AI says: " + text : "Empty reply — is that model installed and running?");
+    }).catch(function (err) {
+      if (err && err.name === "AbortError") helloSetStatus("Timed out — is Ollama running at " + host + "?");
+      else if (err instanceof TypeError) helloSetStatus("Cannot reach Ollama at " + host + " — is it running?");
+      else helloSetStatus("Ollama test failed (" + err.message + ") — check host, model, and cloud key.");
+    }).then(function () {
+      clearTimeout(timer);
+      helloBtn.disabled = false;
+    });
+  });
 
   // ---- router ----
   var views = { "/": "view-settings", "/ask": "view-ask", "/settings": "view-settings", "/settings/setup": "view-settings", "/settings/preferences": "view-settings", "/home": "view-home" };
