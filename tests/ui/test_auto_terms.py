@@ -18,10 +18,11 @@ def test_no_manual_buzzword_form(page, mockup_url):
     assert page.locator("#terms-count").is_visible()
     assert page.locator("#terms-stats").is_visible()
     assert "auto-collected term" in (page.locator("#terms-count").text_content() or "")
-    assert page.locator("#terms-limit").is_visible()
-    assert page.locator("#terms-limit").input_value() == "500"
-    assert page.locator("#prune-freq").is_visible()
-    assert page.locator("#prune-freq").input_value() == "daily"
+    # No limit/prune UI (removed 2026-10-12 — DB-stats-only, growing append-only).
+    assert page.locator("#terms-limit").count() == 0
+    assert page.locator("#terms-limit-hint").count() == 0
+    assert page.locator("#prune-freq").count() == 0
+    assert page.locator("#prune-status").count() == 0
 
 
 def test_ask_extracts_terms_and_refresh_replaces_in_place(page, mockup_url):

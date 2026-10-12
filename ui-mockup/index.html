@@ -118,6 +118,7 @@ dialog article footer button[type="submit"] { width: auto; }
 <div class="grid">
 <label>Ollama host <input id="ollama-host" type="text" value="http://localhost:11434"></label>
 <label>Chat model <input id="ollama-chat" type="text" placeholder="e.g. llama3.1:8b"></label>
+<label>Embed model <input id="ollama-embed" type="text" value="nomic-embed-text" placeholder="nomic-embed-text"></label>
 <label>API key (cloud only) <input id="ollama-key" type="password" placeholder="stored locally only"></label>
 </div>
 <p id="ollama-warn" class="meta">Without the configured model (or cloud key for cloud) the app reports misconfiguration instead of answering.</p>
@@ -142,20 +143,10 @@ dialog article footer button[type="submit"] { width: auto; }
 <p class="meta">Optional setup. Only subscribed sessions are covered. One combined email per check, and only when new papers match a subscribed session (same strictness/TOP_K=15, new papers only). Delivery failures are shown here. Single-user, local only.</p>
 </article>
 <article>
-<h3>Auto-collected topics (AI-extracted)</h3>
-<p class="meta">No manual buzzwords — the AI extracts search terms from each question plus session history. All terms feed one shared corpus.</p>
-<label class="no-print">Term limit <input id="terms-limit" type="number" min="10" max="5000" value="500"></label>
-<label>Auto-prune
-<select id="prune-freq">
-<option value="daily" selected>Every day</option>
-<option value="weekly">Every week</option>
-<option value="monthly">Every month</option>
-</select>
-</label>
-<p id="terms-limit-hint" class="meta">Default 500, pruned every day. The limit is enforced only on the auto-prune schedule (no per-term age check).</p>
+<h3>Auto-collected topics (AI-extracted, transient)</h3>
+<p class="meta">No manual buzzwords — the AI extracts transient search terms from each question plus session history. Terms drive ID-first Europe PMC lookup (OR-union, OPEN_ACCESS:Y, newest-first, pageSize=100, HIT_LIMIT=50000); only PMCIDs missing from the growing DB are downloaded. No term limit, no prune.</p>
 <p id="terms-count" class="meta"></p>
 <p id="terms-stats" class="meta"></p>
-<p id="prune-status" class="meta"></p>
 <p id="buzz-progress" class="meta"></p>
 </article>
 <article>
@@ -262,12 +253,12 @@ dialog article footer button[type="submit"] { width: auto; }
 <header><h3>Doctor visit — 1-page sheet</h3></header>
 <article class="sheet">
 <h3 id="sheet-session">—</h3>
-<p><strong>Question:</strong> <span id="sheet-q">—</span></p>
-<p><strong>Short answer:</strong> <span id="sheet-a">—</span></p>
+<p><strong>Questions covered:</strong> <span id="sheet-q">—</span></p>
+<p><strong>Summary answer:</strong> <span id="sheet-a">—</span></p>
 <p><strong>Citations:</strong> <span id="sheet-cite">—</span></p>
 <p><strong>Unknowns:</strong> <span id="sheet-unknown">—</span></p>
 <p><strong>Ask your doctor:</strong> <span id="sheet-doctor">—</span></p>
-<p class="meta">Condensed 1-page print view per session.</p>
+<p class="meta">Single LLM summary across all Q&As in this session (~500 words max).</p>
 </article>
 <footer>
 <button id="doctor-close" type="button" class="secondary">Close</button>
@@ -280,9 +271,8 @@ dialog article footer button[type="submit"] { width: auto; }
 (function () {
   "use strict";
   var SEEDS = ["ME/CFS therapies and details", "ME/CFS cure research"];
-  var KEY = "pauli.mockup.v2";
-  var PRUNE_WINDOWS = { daily: 86400000, weekly: 7 * 86400000, monthly: 30 * 86400000 };
-  var state = { histories: {}, created: {}, subs: {}, terms: [{ term: "myalgic encephalomyelitis", papers: 120, digesting: false }, { term: "pem", papers: 64, digesting: false }], termsLimit: 500, pruneFreq: "daily", lastPrune: null, mail: { to: "", smtp: "", from: "", freq: "weekly" } };
+  var KEY = "pauli.mockup.v3";
+  var state = { histories: {}, created: {}, subs: {}, terms: [{ term: "myalgic encephalomyelitis", papers: 120, digesting: false }, { term: "pem", papers: 64, digesting: false }], mail: { to: "", smtp: "", from: "", freq: "weekly" } };
   var seeded = false;
   try {
     var raw = localStorage.getItem(KEY);
@@ -308,9 +298,7 @@ dialog article footer button[type="submit"] { width: auto; }
       state.terms = state.buzz.map(function (b) { return { term: String(b), papers: 0, digesting: false }; });
     } else state.terms = [];
   }
-  if (typeof state.termsLimit !== "number" || !(state.termsLimit >= 1)) state.termsLimit = 500;
-  if (PRUNE_WINDOWS[state.pruneFreq] == null) state.pruneFreq = "daily";
-  if (state.lastPrune != null && !(state.lastPrune >= 0)) state.lastPrune = null;
+  delete state.termsLimit; delete state.pruneFreq; delete state.lastPrune; delete state.buzz;
   if (!state.mail || typeof state.mail !== "object") state.mail = { to: "", smtp: "", from: "", freq: "weekly" };
   if (["weekly", "daily", "monthly"].indexOf(state.mail.freq) === -1) state.mail.freq = "weekly";
   if (!state.current || !state.histories[state.current]) state.current = sessions()[0] || null;
@@ -392,32 +380,56 @@ dialog article footer button[type="submit"] { width: auto; }
       doctor: "Is there any research you know on: " + q + "?"
     };
   }
-  var GATES = [
-    { k: ["suicid", "self-harm", "self harm"], cat: "suicidality", crisis: true },
-    { k: ["prognos", "mortal", "death", "survival"], cat: "prognosis/mortality", crisis: false },
-    { k: ["disab"], cat: "severe disability", crisis: false },
-    { k: ["pregnan", "child", "baby"], cat: "pregnancy/children", crisis: false },
-    { k: ["trauma"], cat: "medical trauma", crisis: false },
-    { k: ["crash risk", "crash"], cat: "PEM crash risk", crisis: false }
-  ];
-  function gateFor(q) {
-    var l = q.toLowerCase();
-    for (var i = 0; i < GATES.length; i++) {
-      for (var j = 0; j < GATES[i].k.length; j++) {
-        if (l.indexOf(GATES[i].k[j]) !== -1) return GATES[i];
-      }
-    }
+  // ---- LLM-only GATE tags (mock simulates the chat model emitting tags; no keyword fallback) ----
+  // Allowlist: suicidality, prognosis, disability, pregnancy, trauma, pem-crash.
+  var GATE_CATS = {
+    suicidality: { cat: "suicidality", crisis: true },
+    prognosis: { cat: "prognosis/mortality", crisis: false },
+    disability: { cat: "severe disability", crisis: false },
+    pregnancy: { cat: "pregnancy/children", crisis: false },
+    trauma: { cat: "medical trauma", crisis: false },
+    "pem-crash": { cat: "PEM crash risk", crisis: false }
+  };
+  function sensitivityMode() {
+    var checked = document.querySelector('input[name="sensitivity"]:checked');
+    return checked ? checked.value : "standard";
+  }
+  function parseGateTags(html) {
+    var tags = [];
+    String(html || "").replace(/\[GATE:([a-z-]+)\]/g, function (m, name) {
+      if (GATE_CATS[name]) tags.push(name);
+      return m;
+    });
+    return tags;
+  }
+  function stripGateTags(html) {
+    return String(html || "").replace(/\[GATE:[a-z-]+\]/g, "");
+  }
+  function tagForQuestion(q) {
+    var l = String(q || "").toLowerCase();
+    if (l.indexOf("suicid") !== -1 || l.indexOf("self-harm") !== -1 || l.indexOf("self harm") !== -1) return "suicidality";
+    if (l.indexOf("prognos") !== -1 || l.indexOf("mortal") !== -1 || l.indexOf("die") !== -1 || l.indexOf("death") !== -1 || l.indexOf("survival") !== -1) return "prognosis";
+    if (l.indexOf("disab") !== -1) return "disability";
+    if (l.indexOf("pregnan") !== -1 || l.indexOf("child") !== -1 || l.indexOf("baby") !== -1) return "pregnancy";
+    if (l.indexOf("trauma") !== -1) return "trauma";
+    if (l.indexOf("crash") !== -1) return "pem-crash";
     return null;
   }
   function answerFor(q) {
-    var g = gateFor(q), l = q.toLowerCase();
-    if (g) {
-      return { kind: "gated", gate: g, inner: PEM,
-        html: PEM.html, plain: PEM.plain, cite: PEM.cite, unknown: PEM.unknown, doctor: PEM.doctor };
+    var l = String(q || "").toLowerCase();
+    var base;
+    if (l.indexOf("trigger") !== -1 && l.indexOf("pem") !== -1) base = PEM;
+    else if (l.indexOf("pem") !== -1 && (l.indexOf("what") !== -1 || l.indexOf("?") !== -1)) base = PEM;
+    else if (l.indexOf("cure") !== -1) base = CURE;
+    else base = null;
+    var tag = tagForQuestion(q);
+    if (tag) {
+      var inner = base || PEM;
+      return { kind: "gated", tag: tag, gate: GATE_CATS[tag],
+        html: "[GATE:" + tag + "]" + inner.html, plain: inner.plain, cite: inner.cite,
+        unknown: inner.unknown, doctor: inner.doctor };
     }
-    if (l.indexOf("trigger") !== -1 && l.indexOf("pem") !== -1) return PEM;
-    if (l.indexOf("pem") !== -1 && (l.indexOf("what") !== -1 || l.indexOf("?") !== -1)) return PEM;
-    if (l.indexOf("cure") !== -1) return CURE;
+    if (base) return base;
     return unknown(q);
   }
 
@@ -475,30 +487,53 @@ dialog article footer button[type="submit"] { width: auto; }
     b.setAttribute("aria-label", label);
     b.setAttribute("aria-pressed", on ? "true" : "false");
   }
+  function effectiveTag(item) {
+    var tags = parseGateTags(item.html || "");
+    var tag = tags.length ? tags[0] : (item.tag || null);
+    if (!tag && item.gate && item.gate.cat) {
+      var cats = Object.keys(GATE_CATS);
+      for (var i = 0; i < cats.length; i++) {
+        if (GATE_CATS[cats[i]].cat === item.gate.cat) { tag = cats[i]; break; }
+      }
+    }
+    return tag;
+  }
   function renderItem(item, idx) {
     var li = document.createElement("li");
     var q = document.createElement("div"); q.className = "q"; q.textContent = item.q; li.appendChild(q);
     var a = document.createElement("div"); a.className = "a";
-    if (item.kind === "gated" && !item.revealed) {
+    var tag = (item.kind === "gated") ? effectiveTag(item) : null;
+    var mode = sensitivityMode();
+    if (tag && mode === "low" && tag !== "suicidality") tag = null;
+    var hideMode = (item.kind === "gated") && !!tag && mode === "hide" && !item.revealed;
+    if (item.kind === "gated" && tag && !item.revealed) {
+      var info = GATE_CATS[tag];
       var card = document.createElement("article");
       var p = document.createElement("p");
-      p.textContent = "This answer contains " + item.gate.cat + ".";
+      p.textContent = hideMode ? ("This answer may contain sensitive content.") : ("This answer contains " + info.cat + ".");
       var bShow = document.createElement("button"); bShow.type = "button";
-      bShow.appendChild(makeIcon("eye")); bShow.appendChild(document.createTextNode("Show"));
+      bShow.appendChild(makeIcon("eye")); bShow.appendChild(document.createTextNode(hideMode ? "Show (confirm)" : "Show"));
       var bSkip = document.createElement("button"); bSkip.type = "button"; bSkip.className = "secondary";
       bSkip.appendChild(makeIcon("skip")); bSkip.appendChild(document.createTextNode("Skip"));
       var bWhy = document.createElement("button"); bWhy.type = "button"; bWhy.className = "contrast outline";
       bWhy.appendChild(makeIcon("info")); bWhy.appendChild(document.createTextNode("Why am I seeing this?"));
       var why = document.createElement("p"); why.className = "meta"; why.hidden = true;
-      why.textContent = "Gated because it may mention " + item.gate.cat + ". Nothing reveals without your click.";
-      var body = document.createElement("div"); body.className = "blur"; body.innerHTML = item.html;
-      bShow.onclick = function () { item.revealed = true; persist(); renderHistory(); scrollToItem(idx); };
-      bSkip.onclick = function () { card.innerHTML = ""; var s = document.createElement("p"); s.className = "meta"; s.textContent = "Skipped gated answer (" + item.gate.cat + ")."; card.appendChild(s); };
+      why.textContent = hideMode
+        ? "Hidden-detail mode: titles only until you confirm twice. Nothing reveals without your clicks."
+        : "The AI tagged this span [GATE:" + tag + "] (" + info.cat + "). Nothing reveals without your click.";
+      var body = document.createElement("div"); body.className = "blur"; body.innerHTML = stripGateTags(item.html);
+      bShow.onclick = function () {
+        if (sensitivityMode() === "hide" && !item.confirmArmed) {
+          item.confirmArmed = true; persist(); renderHistory(); scrollToItem(idx); return;
+        }
+        item.revealed = true; item.confirmArmed = false; persist(); renderHistory(); scrollToItem(idx);
+      };
+      bSkip.onclick = function () { card.innerHTML = ""; var s = document.createElement("p"); s.className = "meta"; s.textContent = "Skipped gated answer (" + info.cat + ")."; card.appendChild(s); };
       bWhy.onclick = function () { why.hidden = !why.hidden; };
       var acts = document.createElement("div"); acts.className = "gate-actions no-print";
       acts.appendChild(bShow); acts.appendChild(bSkip); acts.appendChild(bWhy);
       card.appendChild(p); card.appendChild(acts); card.appendChild(why); card.appendChild(body);
-      if (item.gate.crisis) { var note = document.createElement("p"); note.className = "meta disclaimer"; note.textContent = "Crisis resources: call your local emergency number or crisis helpline."; card.appendChild(note); }
+      if (info.crisis) { var note = document.createElement("p"); note.className = "meta disclaimer"; note.textContent = "Crisis resources: call your local emergency number or crisis helpline."; card.appendChild(note); }
       a.appendChild(card);
     } else {
       if (item.incomplete) {
@@ -526,7 +561,7 @@ dialog article footer button[type="submit"] { width: auto; }
         warn.appendChild(rb);
         a.appendChild(warn);
       }
-      var d = document.createElement("div"); d.innerHTML = item.html; a.appendChild(d);
+      var d = document.createElement("div"); d.innerHTML = stripGateTags(item.html); a.appendChild(d);
     }
     li.appendChild(renderQuestionMenu(item, idx));
     li.appendChild(a);
@@ -629,7 +664,7 @@ dialog article footer button[type="submit"] { width: auto; }
     var ans = answerFor(q);
     var entry = { q: q, html: ans.html, plain: ans.plain, cite: ans.cite,
       unknown: ans.unknown, doctor: ans.doctor, kind: ans.kind,
-      gate: ans.gate || null, revealed: false,
+      tag: ans.tag || null, gate: ans.gate || null, revealed: false, confirmArmed: false,
       incomplete: added.length > 0, terms: newTerms,
       progress: added.length ? ("Digesting " + added.length + " new term(s): " + added.join(", ")) : "" };
     state.histories[t].push(entry);
@@ -727,7 +762,7 @@ dialog article footer button[type="submit"] { width: auto; }
     var ans = answerFor(next);
     h[qeditIdx] = { q: next, html: ans.html, plain: ans.plain, cite: ans.cite,
       unknown: ans.unknown, doctor: ans.doctor, kind: ans.kind,
-      gate: ans.gate || null, revealed: false };
+      tag: ans.tag || null, gate: ans.gate || null, revealed: false, confirmArmed: false };
     var idx = qeditIdx;
     qeditIdx = -1;
     $("qedit-dialog").close();
@@ -763,18 +798,30 @@ dialog article footer button[type="submit"] { width: auto; }
   $("doctor-close").addEventListener("click", function () { $("doctor-dialog").close(); });
   $("doctor-print").addEventListener("click", function () { window.print(); });
 
-  // ---- doctor dialog (read-only, current Ask session) ----
+  // ---- doctor dialog: single LLM summary across ALL Q&As (~500 words max) ----
   function renderDoctorDialog() {
     var t = current();
     if (!t) return;
     var h = state.histories[t] || [];
     $("sheet-session").textContent = t;
     if (h.length) {
-      $("sheet-q").textContent = h[0].q;
-      $("sheet-a").textContent = h[0].plain || "";
-      $("sheet-cite").textContent = h[0].cite || "—";
-      $("sheet-unknown").textContent = h[0].unknown || "—";
-      $("sheet-doctor").textContent = h[0].doctor || "—";
+      var qs = h.map(function (x) { return x.q; }).join(" | ");
+      var as = h.map(function (x) { return stripGateTags(x.plain || ""); }).join(" ");
+      var cites = [], seenC = {};
+      h.forEach(function (x) {
+        String(x.cite || "").split(/\s+/).forEach(function (c) {
+          if (c && !seenC[c]) { seenC[c] = 1; cites.push(c); }
+        });
+      });
+      var unks = h.map(function (x) { return x.unknown; }).filter(Boolean).join("; ");
+      var docs = h.map(function (x) { return x.doctor; }).filter(Boolean).join(" ");
+      var words = as.split(/\s+/).filter(Boolean);
+      if (words.length > 500) as = words.slice(0, 500).join(" ") + "…";
+      $("sheet-q").textContent = qs;
+      $("sheet-a").textContent = as;
+      $("sheet-cite").textContent = cites.length ? cites.join(" ") : "—";
+      $("sheet-unknown").textContent = unks || "—";
+      $("sheet-doctor").textContent = docs || "—";
     } else {
       $("sheet-q").textContent = "—";
       $("sheet-a").textContent = "No questions in this session yet.";
@@ -784,6 +831,9 @@ dialog article footer button[type="submit"] { width: auto; }
     }
   }
   // ---- auto-collected terms (AI-extracted, no manual input) ----
+  // ---- transient extracted terms: no store, no limit, no prune ----
+  // Terms live only for the lookup; ID-first PMCID-dedup against a growing DB.
+  // Mock keeps an extraction log + fake DB counters for display only.
   var STOP = ["what", "when", "where", "which", "with", "from", "about", "does", "are", "the", "and", "for", "how", "why", "can", "you"];
   function mockExtract(q) {
     var words = String(q || "").toLowerCase().replace(/[^a-z0-9\s-]/g, " ").split(/\s+/);
@@ -795,23 +845,6 @@ dialog article footer button[type="submit"] { width: auto; }
     });
     return out.slice(0, 5);
   }
-  function pruneDue(now) {
-    if (state.terms.length <= state.termsLimit) return false;
-    if (state.lastPrune == null) return true;
-    return (now - state.lastPrune) >= (PRUNE_WINDOWS[state.pruneFreq] || PRUNE_WINDOWS.daily);
-  }
-  function maybePrune(now) {
-    now = (typeof now === "number") ? now : Date.now();
-    if (!pruneDue(now)) return [];
-    var pruned = [];
-    while (state.terms.length > state.termsLimit) {
-      var t = state.terms.pop();
-      if (t) pruned.push(t.term);
-    }
-    state.lastPrune = now;
-    if (pruned.length) persist();
-    return pruned;
-  }
   function addAutoTerms(terms) {
     var added = [];
     terms.forEach(function (raw) {
@@ -819,55 +852,30 @@ dialog article footer button[type="submit"] { width: auto; }
       if (t.length < 2) return;
       var found = null;
       state.terms.forEach(function (e) { if (e.term === t) found = e; });
-      if (found) { found.digesting = found.digesting; return; }
+      if (found) return;
       state.terms.unshift({ term: t, papers: 12, digesting: true });
       added.push(t);
     });
     if (added.length) persist();
-    maybePrune();
     return added;
   }
   function renderBuzz() {
-    maybePrune();
     var total = state.terms.length;
     var digesting = state.terms.filter(function (e) { return e.digesting; }).length;
     var complete = total - digesting;
     var papers = state.terms.reduce(function (s, e) { return s + (e.papers || 0); }, 0);
     var avg = total ? (papers / total) : 0;
-    var over = Math.max(0, total - state.termsLimit);
     var count = $("terms-count");
-    if (count) count.textContent = total + " auto-collected term(s) (limit " + state.termsLimit + ").";
+    if (count) count.textContent = total + " auto-collected term(s), transient (no limit, no prune).";
     var stats = $("terms-stats");
     if (stats) stats.textContent = "Papers: " + papers + " total, " + avg.toFixed(1) +
       " avg/term; " + digesting + " digesting, " + complete + " complete; " +
-      "DB: n/a in mockup (local SQLite when backend lands)" +
-      (over ? "; " + over + " over limit until next prune" : ".");
-    var pstat = $("prune-status");
-    if (pstat) {
-      var last = (state.lastPrune != null) ? new Date(state.lastPrune).toLocaleDateString() : "never";
-      pstat.textContent = "Auto-prune every " + state.pruneFreq.replace("daily", "day").replace("weekly", "week").replace("monthly", "month") + " (last: " + last + ").";
-    }
+      "DB: growing append-only (PMCID-dedup); raw: data/raw/<PMCID>.* (mockup: local SQLite when backend lands).";
     var prog = $("buzz-progress");
     if (prog) {
-      prog.textContent = digesting ? ("Digesting " + digesting + " term(s) in the background…") : (total + " auto-collected term(s).");
+      prog.textContent = digesting ? ("Digesting " + digesting + " term(s) in the background…") : (total + " transient term(s) extracted.");
     }
-    var lim = $("terms-limit");
-    if (lim && String(lim.value) !== String(state.termsLimit)) lim.value = state.termsLimit;
-    var freq = $("prune-freq");
-    if (freq && freq.value !== state.pruneFreq) freq.value = state.pruneFreq;
   }
-  var termsLimitEl = $("terms-limit");
-  if (termsLimitEl) termsLimitEl.addEventListener("change", function () {
-    var n = parseInt(termsLimitEl.value, 10);
-    if (!(n >= 1)) { $("terms-limit-hint").textContent = "Enter 1 or more (default 500)."; return; }
-    if (n > 5000) n = 5000;
-    state.termsLimit = n; persist(); renderBuzz();
-  });
-  var pruneFreqEl = $("prune-freq");
-  if (pruneFreqEl) pruneFreqEl.addEventListener("change", function () {
-    if (PRUNE_WINDOWS[pruneFreqEl.value] == null) return;
-    state.pruneFreq = pruneFreqEl.value; persist(); renderBuzz();
-  });
 
   // ---- settings ----
   function renderMail() {
@@ -905,6 +913,9 @@ dialog article footer button[type="submit"] { width: auto; }
   simple.addEventListener("input", renderSimple);
   var strict = $("strict");
   strict.addEventListener("input", function () { $("strict-val").textContent = strict.value; });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="sensitivity"]'), function (r) {
+    r.addEventListener("change", function () { renderHistory(); });
+  });
   renderSimple();
 
   // ---- ollama setup test ("Test Ollama") ----

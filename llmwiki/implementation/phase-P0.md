@@ -16,14 +16,14 @@ sources:
 Implements [data pipeline](/architecture/data-pipeline.md).[^impl-plan]
 
 * P0.1 `questionanswering/extract.py`: `build_extraction_prompt(question, history)` + `parse_extraction_response(text)` + `extract_terms(question, history, chat_fn)`. No hit-count gate — normalize/lowercase/dedup only. Verify `test_extract.py` (splits, dedup, history in prompt, empty short-circuits).
-* P0.1b `index/terms.py`: `TermStore(max_terms=500, prune_freq="daily")` scheduled-cap LRU (add_many/touch/remove/mark_complete/set_limit defer eviction; prune_now/prune_due/maybe_prune enforce LRU down to cap on day/week/month cadence, default daily) + `stats()` (terms, digesting/complete, total/avg papers) + `get_db_stats(db_path)` (db bytes, papers/chunks/vectors, zeros when no DB). Verify `test_terms.py` (dedup, deferred eviction, cadence, stats).
-* P0.2 `ingest/europepmc.py`: OR-union search via `httpx`, per-term counts, paged full fetch, OA fullText/abstract, OA-only. Verify mocked HTTP, query + paging.[^impl-plan]
-* P0.3 `ingest/topics.py`: `topic_hash` + `last_sync` CRUD. Verify stable hash, round-trip.[^impl-plan]
-* P0.4 `ingest/pipeline.py`: fetch → raw files → `papers` rows, paged + resumable on PMCID. Verify 3 mocked papers, idempotent rerun.[^impl-plan]
+* P0.1b REMOVED 2026-10-12 — no persisted term store, no limit/prune. Delete `TermStore` from `pauli/index/terms.py` (keep `get_db_stats(db_path)` only, moved to `pauli/index/stats.py` if cleaner), delete `tests/test_terms.py` prune tests, drop `#terms-limit`/`#prune-freq` from mockup + `test_auto_terms.py` (DB-stats-only `#terms-count`/`#terms-stats`). Verify `pytest` green.
+* P0.2 `ingest/europepmc.py`: OR-union `OPEN_ACCESS:Y` ID-first search via `httpx`, newest-first, `pageSize=100`, cap `HIT_LIMIT=50000`, then full fetch ONLY for PMCIDs missing from DB. Verify mocked HTTP, query + paging + ID-filter.[^impl-plan]
+* P0.3 DROPPED 2026-10-12 — no `topic_hash`/topics table (single `data/raw/`, global corpus). Keep stable-hash helper only if needed for migration; otherwise delete `ingest/topics.py`. Verify removal + `pytest` green.
+* P0.4 `ingest/pipeline.py`: IDs → PMCID-filter against DB → `data/raw/<PMCID>.*` → `papers` rows for new PMCIDs only, paged + resumable on PMCID, async fast-slice (~50–100) + background backfill. Verify 3 mocked papers, idempotent rerun, no re-download of stored PMCIDs.[^impl-plan]
 * P0.5 `index/chunk.py`: ~512/50 deterministic, no network. Verify size/overlap/PMCID link.[^impl-plan]
 * P0.6 `index/embed.py`: `embed(texts)` via Ollama `nomic-embed-text`, alt `all-MiniLM-L6-v2`. Verify mocked vectors, swappable.[^impl-plan]
-* P0.7 `index/store.py`: insert + `search_vectors(topic_hash, vec, top_k)`. Verify 5-chunk filtered search.[^impl-plan]
-* P0.8 `ingest/sync.py`: `FIRST_PDATE:[last_sync TO NOW]`, PMCID dedup, append-only, re-embed, count. Verify `test_sync_dedup.py`.[^impl-plan]
+* P0.7 `index/store.py`: insert + `search_vectors(vec, top_k)` GLOBAL (no `topic_hash` arg; column may persist as provenance but is never filtered). Verify 5-chunk global search.[^impl-plan]
+* P0.8 `ingest/sync.py`: re-extract terms from stored past questions of subscribed sessions, same ID-first lookup (`pageSize=100`/`HIT_LIMIT=50000`), PMCID dedup vs DB, append-only, re-embed, count. No `FIRST_PDATE` window. Verify `test_sync_dedup.py`.[^impl-plan]
 * P0-gate manual: real topic fetch, cache hit, links resolve; `pytest` green.[^impl-plan]
 
 [^impl-plan]: P.A.U.L.I. Implementation Plan

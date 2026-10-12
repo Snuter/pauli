@@ -15,8 +15,8 @@ sources:
 
 Implements [safety gating](/architecture/safety-gating.md).[^impl-plan]
 
-* P2.1 `safety/detector.py`: keyword scan of chunks + draft, 6 categories. Verify `test_warnings.py` ± per category.[^impl-plan]
-* P2.2 `safety/gate.py` + `resources.py`: blur card Show/Skip/Why, simpler-slider wording, advice disclaimer + crisis resources, `low`/`standard`/`hide details` local. Verify across slider range parametrized.[^impl-plan]
+* P2.1 `safety/detector.py`: parse LLM-only `[GATE:...]` tags (allowlist above, strip from display; no keyword scan). Verify `test_warnings.py` ± per category incl. unknown-tag strip + missing-tag no-gate.[^impl-plan]
+* P2.2 `safety/gate.py` + `resources.py`: per-tag blur card Show/Skip/Why, simpler-slider wording, advice disclaimer + crisis resources, `low`/`standard`/`hide details` local (low honors suicidality tags only). Verify across slider range parametrized.[^impl-plan]
 * P2.3 `safety/events.py`: shown/skipped log, category+action only. Verify no query text.[^impl-plan]
 * P2.4 Wire into `service.py` + template before details. Verify manual prognosis query gates at every slider setting.[^impl-plan]
 * P2-gate: `test_warnings.py` green, gate precedes content (unit + `tests/ui/` playwright assertion).[^impl-plan]
