@@ -25,7 +25,7 @@ No built-in default topics — the corpus starts from what you ask.[^user-journe
 
 Corpus status lives under Initial Setup as database statistics only — no per-term list, no term limit/prune UI (dropped 2026-10-12): DB size + paper/chunk/vector rows via `get_db_stats()` plus digest progress (`#terms-count`/`#terms-stats` show DB stats; `#terms-limit`/`#prune-freq` removed in backend).
 
-* Retrieval strictness: `0–100` slider → threshold `0.0–0.6` (default `0.3`, `TOP_K=15` fixed) — see [gating](/workflows/sensitive-gating.md). It controls how much retrieved text is placed into the model's context window: lower strictness sends more passages and needs a larger window. Usable context size depends on the model (each model has a fixed maximum) and on your hardware (a local model needs enough RAM/VRAM to hold it; cloud models follow the provider's limits). If answers get cut off, turn incoherent, or everything gets very slow, raise strictness or switch to a model with a larger context window on hardware that can hold it.
+* Retrieval strictness: `0–100` slider → `threshold = strictness/100*0.6` linear (default `0.3`, `TOP_K=15` fixed, cosine via sqlite-vec, decided 2026-10-12) — see [gating](/workflows/sensitive-gating.md). It controls how much retrieved text is placed into the model's context window: lower strictness sends more passages and needs a larger window. Usable context size depends on the model (each model has a fixed maximum) and on your hardware (a local model needs enough RAM/VRAM to hold it; cloud models follow the provider's limits). If answers get cut off, turn incoherent, or everything gets very slow, raise strictness or switch to a model with a larger context window on hardware that can hold it.
 
 ### Optional setup: subscription email
 

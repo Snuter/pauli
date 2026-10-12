@@ -1,6 +1,6 @@
 # Architecture
 
-* [Data Pipeline](data-pipeline.md) - Transient terms, ID-first dedup, fast-slice + backfill, 512/50 chunks, global corpus.
+* [Data Pipeline](data-pipeline.md) - Transient terms, ID-first dedup, fast-slice + thread backfill, 512/50 word chunks, global corpus.
 * [RAG Chat](rag-chat.md) - Rewrite-retrieve-generate with code citation/abstain gates.
 * [Language Modes](language-modes.md) - Simplicity-slider-only wording, textstat.
 * [Safety Gating](safety-gating.md) - 6 categories, LLM GATE tags, blur card, sensitivity, logging.

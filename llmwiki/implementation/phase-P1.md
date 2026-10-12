@@ -15,7 +15,7 @@ sources:
 
 Implements [RAG](/architecture/rag-chat.md) + [language](/architecture/language-modes.md).[^impl-plan]
 
-* P1.1 `questionanswering/retrieve.py`: rewrite + top-k (`TOP_K=15`) + threshold (`0.3`, strictness → `0.0–0.6`). Verify empty→abstain, slider mapping.[^impl-plan]
+* P1.1 `questionanswering/retrieve.py`: rewrite + top-k (`TOP_K=15`) + threshold (`0.3`, strictness → `threshold = strictness/100*0.6` linear, cosine via sqlite-vec, decided 2026-10-12). Verify empty→abstain, slider mapping.[^impl-plan]
 * P1.2 `questionanswering/generate.py`: chunks-only via `ollama-python` + `OLLAMA_CHAT_MODEL`, never opencode, fail closed. System prompt orders: chunks-only, every factual sentence ends `[PMCID]`, emit inline LLM-only GATE tags `[GATE:suicidality|prognosis|disability|pregnancy|trauma|pem-crash]` at sensitive spans (no keyword fallback; missing tags = no gate). Verify mocked prompt incl. GATE instruction, no key in logs.[^impl-plan]
 * P1.3 `questionanswering/citations.py`: factual sentences end `[PMCID]` ∈ retrieval set. Verify presence + validity (invented rejected).[^impl-plan]
 * P1.4 `questionanswering/abstain.py`: unknown template, 3 branches, never guess. Verify `test_abstain.py`.[^impl-plan]
