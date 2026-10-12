@@ -21,11 +21,11 @@ Cached OA subset keyed by patient buzzwords, no built-in defaults; chat Q&A over
 
 # Pipeline
 
-OR-union query, per-term validation, full paged ingest with resume, 512/50 chunking, Ollama embeddings, sqlite-vec with `topic_hash`, `last_sync` sync — [data pipeline](/architecture/data-pipeline.md).[^tech-concept]
+OR-union `OPEN_ACCESS:Y` ID-first query, newest-first paged IDs (`pageSize=100`, `HIT_LIMIT=50000`), PMCID-dedup against the growing DB, 512/50 word chunks, Ollama embeddings, sqlite-vec global corpus (no `topic_hash`), `sync_state(last_run)` sync — [data pipeline](/architecture/data-pipeline.md).[^tech-concept]
 
 # RAG + safety + language
 
-Rewrite→retrieve (`TOP_K=15`, `0.3` + strictness slider)→chunks-only generate→code citation/abstain gates — [RAG](/architecture/rag-chat.md). Simplicity slider only (10–15), `textstat`-verified — [language](/architecture/language-modes.md). Six-category keyword gate, blur card, sensitivity profiles — [safety](/architecture/safety-gating.md). Scheduled checks, email digest, auto-persisted sessions, 1-page print export — [tracker](/architecture/tracker-export.md).[^tech-concept]
+Rewrite→retrieve (`TOP_K=15`, `threshold = strictness/100*0.6` linear cosine + strictness slider)→chunks-only generate→code citation/abstain gates — [RAG](/architecture/rag-chat.md). Simplicity slider only (10–15), `textstat`-verified — [language](/architecture/language-modes.md). Six-category LLM-only GATE tags, whole-answer single blur card, sensitivity profiles — [safety](/architecture/safety-gating.md). Scheduled checks, email digest, auto-persisted sessions, 1-page print export — [tracker](/architecture/tracker-export.md).[^tech-concept]
 
 # Stack + phases + success criteria
 
