@@ -19,7 +19,7 @@ sources:
 * Mid (12–13, default 12): short sentences + glossary.[^tech-concept]
 * High end (14–15): longer sentences, less glossary; keeps term + short definition, e.g. `post-exertional malaise (crash after effort)`.[^tech-concept]
 
-Simplification adds no facts; citation check applies at every slider setting; verify with `textstat` Flesch-Kincaid across the slider range.[^tech-concept]
+Simplification adds no facts; citation check applies at every slider setting; verify with `textstat` Flesch-Kincaid across the slider range — frozen targets (grade level): 10→6, 12→8 (default), 15→10; assert monotonic increase with slider and citations preserved.[^tech-concept]
 
 User view: [language toggle](/workflows/language-toggle.md).
 
