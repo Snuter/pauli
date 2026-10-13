@@ -151,7 +151,7 @@ dialog article footer button[type="submit"] { width: auto; }
 </article>
 <article>
 <h3>Retrieval strictness</h3>
-<label>Strictness <span id="strict-val">30</span>/100 <input id="strict" type="range" min="0" max="100" value="30"></label>
+<label>Strictness <span id="strict-val">50</span>/100 <input id="strict" type="range" min="0" max="100" value="50"></label>
 <p class="meta">Threshold 0.0–0.6 (default 0.3). TOP_K=15 fixed. Separate from sensitivity.</p>
 <p class="meta">Context window: retrieved passages are placed into your Ollama model's context window — lower strictness sends more text and needs a larger window. Usable context size depends on the model (each model has a fixed maximum) and on your hardware (a local model needs enough RAM/VRAM to hold it; cloud models follow the provider's limits). If answers get cut off, turn incoherent, or everything gets very slow, raise strictness to send less context, or switch to a model with a larger context window on hardware that can hold it.</p>
 </article>

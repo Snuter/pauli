@@ -24,3 +24,7 @@ def test_abstain_template_slots():
 def test_doctor_prompt_has_five_parts():
     assert "500" in P.DOCTOR_SUMMARY_PROMPT
     assert "{title}" in P.DOCTOR_SUMMARY_PROMPT
+
+
+def test_conflict_marker_literal():
+    assert P.CONFLICT_MARKER == "[CONFLICT]"

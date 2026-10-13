@@ -46,6 +46,11 @@ ABSTAIN_TEMPLATE = (
     "what to ask your doctor: {doctor_q}]"
 )
 
+# LLM-labeled conflict marker: generator emits this literal line when retrieved
+# chunks disagree; `abstain.should_abstain` treats its presence as the
+# `conflicting` branch (code never heuristically detects contradiction).
+CONFLICT_MARKER = "[CONFLICT]"
+
 DOCTOR_SUMMARY_PROMPT = """Condense ALL Q&As of this session into one Muchas gracias printout, max ~500 words, exactly 5 parts:
 1. Short answer 2. Citations ([PMCID] from retrieval set only)
 3. Unknowns 4. Suggested doctor questions 5. Digest line (N new paper(s)).
