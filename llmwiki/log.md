@@ -1,6 +1,7 @@
 # LLMWIKI Update Log
 
 ## 2026-10-13
+* **Fix**: Threshold canonical linear (`strictness/100*0.6`, default 50->0.3; `max()` floor removed from P1.1) + Europe PMC typos (sort-param space, `{PMCID}` fullTextXML + abstract-fallback, `FIRST_PDATE_D` sort vs window-filter disambiguation across pipeline/P0/P3) + crisis EU-generic 112 (placeholder + `assumed` hedging removed) + mockup DO-NOT-COPY extended to `answerFor()` keyword routing.
 * **Fix**: Europe PMC REST contract frozen (`search?query=&format=json` + `fullTextXML`, example OR-union query, minimal fixture, `Retry-After`/retry) + `get_generate_system()` (`GENERATE_SYSTEM.format(vocab=GATE_VOCAB)`, `{vocab}`-leak test) + S1 loose `>=` dep minimums (`fastapi/uvicorn/httpx/sqlite-vec/ollama/jinja2/textstat/apscheduler`).
 
 ## 2026-10-13

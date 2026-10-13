@@ -405,9 +405,10 @@ dialog article footer button[type="submit"] { width: auto; }
   function stripGateTags(html) {
     return String(html || "").replace(/\[GATE:[a-z-]+\]/g, "");
   }
-  // DO-NOT-COPY for backend: gating is LLM-only (safety/gate.py allowlist).
-  // This mock stub simulates the chat model emitting [GATE:*] tags.
-  // Production MUST NOT use keyword matching (no keyword fallback).
+  // DO-NOT-COPY for backend: gating AND answer routing here are mock-only.
+  // This mock stub simulates the chat model emitting [GATE:*] tags (tagForQuestion)
+  // and canned PEM/CURE demo answers (answerFor). Production MUST NOT use keyword
+  // matching for either (no keyword fallback, no keyword answer routing).
   function tagForQuestion(q) {
     // Demo stub only: always no-gate unless the question already carries an explicit tag.
     // UI demo can inject "[GATE:prognosis]" etc. manually to preview the blur card.
