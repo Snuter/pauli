@@ -13,36 +13,50 @@ Backend replicates `ui-mockup/index.html` element IDs. All pages server-rendered
 
 ## Views
 
-* `GET /` → Settings (`#view-settings`: `#setup` + `#preferences`).
-* `GET /ask/{session_id}` → Ask view (`#ask-title` = session title, `#history-list`, `#ask-form`+`#ask-input`, menu `#menu-sub[aria-pressed]` `#menu-doctor` `#menu-rename` `#menu-delete`).
-* `GET /home` → Home empty state (`#view-home`, Ask hidden incl. `#ask-form`).
+* `GET /` -> Settings (`#view-settings`: `#setup` + `#preferences`). 200 HTML.
+* `GET /ask/{session_id}` -> Ask view (`#ask-title` = session title, `#history-list`, `#ask-form`+`#ask-input`, menu `#menu-sub[aria-pressed]` `#menu-doctor` `#menu-rename` `#menu-delete`). 404 HTML when unknown id.
+* `GET /home` -> Home empty state (`#view-home`, Ask hidden incl. `#ask-form`). 200 HTML.
 
 ## Sessions (sidebar `#session-list`, newest-first `ORDER BY created_at DESC`)
 
-* `POST /sessions` (form `title≤60` trim, reject empty/duplicate with hint, 422) → prepend fragment + `HX-Redirect:/ask/{id}`.
-* `POST /sessions/{id}/rename` (same validation, `#rename-dialog`) → update title + bump `created_at`.
-* `POST /sessions/{id}/delete` (`#delete-dialog` confirm) → remove + history + subscription; empty → Home.
-* `POST /sessions/{id}/subscribe-toggle` → flip `subscribed`, bump `created_at`, return `#menu-sub[aria-pressed]`.
-* Any session data change bumps `created_at` (ask/edit/move/delete-q/rename/sub-toggle).
+| Method+path | Request (form) | Success | Errors |
+|---|---|---|---|
+| `POST /sessions` | `title: str, trim, 1-60 chars` | 200 fragment (prepend `#session-list li`) + `HX-Redirect: /ask/{id}` | 422 fragment (inline hint, dialog stays open) on empty/duplicate |
+| `POST /sessions/{id}/rename` | `title: str, trim, 1-60` (`#rename-dialog #rename-input maxlength=60`) | 200 fragment (updated title) + bump `created_at` | 422 hint on empty/duplicate; 404 unknown id |
+| `POST /sessions/{id}/delete` | confirm via `#delete-dialog` (no fields) | 200 fragment (remove li); empty list -> `HX-Redirect: /home` | 404 unknown id |
+| `POST /sessions/{id}/subscribe-toggle` | none | 200 fragment `#menu-sub[aria-pressed=true|false]` + bump `created_at` | 404 unknown id |
+
+Any session data change bumps `created_at` (ask/edit/move/delete-q/rename/sub-toggle).
 
 ## Q&A (`#history-list li`, per-Q `.q-actions`)
 
-* `POST /sessions/{id}/ask` (`q`) → extract transient terms → ID-first Europe PMC lookup → fast-slice answer (incomplete badge `data-testid=incomplete-badge` + `digest-progress` + `refresh-answer` while backfill runs) → append fragment.
-* `POST /sessions/{id}/questions/{pos}/refresh` → replace answer in place, clear incomplete.
-* `POST /sessions/{id}/questions/{pos}/move` (`dir=up|down`, swap `position`, boundary disabled) → reorder fragment; doctor sheet follows new first.
-* `POST /sessions/{id}/questions/{pos}/edit` (`q≤500`, `#qedit-dialog`, rerun retrieve+generate, reset gating) → replace in place.
-* `POST /sessions/{id}/questions/{pos}/delete` (`#qdelete-dialog` confirm) → remove session-locally.
+| Method+path | Request (form) | Success | Errors |
+|---|---|---|---|
+| `POST /sessions/{id}/ask` | `q: str, trim, 1-500` | 200 append `#history-list li` (fast-slice answer; while backfill: `data-testid=incomplete-badge` + `data-testid=digest-progress` + `data-testid=refresh-answer`); misconfig -> 200 setup-hint fragment instead of answer | 422 on empty/overlong `q`; 404 unknown session |
+| `POST /sessions/{id}/questions/{pos}/refresh` | `pos: int, 0-based \`session_answers.position\`` | 200 replace `li` in place, clear incomplete | 404 bad pos |
+| `POST /sessions/{id}/questions/{pos}/move` | `dir: up\|down` (swap `position`; boundary buttons `disabled`) | 200 reorder fragment; doctor sheet follows new first | 422 bad `dir`; 404 bad pos |
+| `POST /sessions/{id}/questions/{pos}/edit` | `q: str, 1-500` (`#qedit-dialog`, rerun retrieve+generate, reset gating) | 200 replace in place | 422 on empty/overlong; 404 bad pos |
+| `POST /sessions/{id}/questions/{pos}/delete` | confirm `#qdelete-dialog` | 200 remove `li` session-locally (corpus untouched) | 404 bad pos |
+
+Backfill polling: `GET /sessions/{id}/digest-progress` (2s interval, `{digesting:bool,count:int}`) until complete; manual `refresh-answer` triggers refresh endpoint above.
 
 ## Settings (`#view-settings`)
 
-* `POST /settings/ollama` (`host, chat_model, embed_model, mode, key`) + `POST /settings/ollama/test` (`#ollama-hello` → `#ollama-hello-status`, fail-closed strings).
-* `POST /settings/strictness` (`0–100` → `threshold = strictness/100*0.6` linear), `POST /settings/simplicity` (`10–15`), `POST /settings/sensitivity` (`low|standard|hide`).
-* `GET /settings/db-stats` → `#terms-stats` (`get_db_stats()`: bytes/papers/chunks/vectors; no term limit/prune UI).
-* `POST /settings/mail` (`to,smtp,from,freq`) → `#mail-status`; SMTP failures surface here.
+| Method+path | Request (form) | Success | Errors |
+|---|---|---|---|
+| `POST /settings/ollama` | `host: url, chat_model: str (required, no default), embed_model: str (=nomic-embed-text), mode: local\|cloud, key: str (cloud-only, never echoed)` | 200 `#ollama-hello-status` saved note (key never returned) | 422 bad host/empty chat_model in cloud without key |
+| `POST /settings/ollama/test` | none (uses saved) | 200 `#ollama-hello-status` greeting (`Say hi briefly.`, 15s timeout) | 200 fail-closed string (missing model/key, unreachable/timeout) — never 500 |
+| `POST /settings/strictness` | `strictness: int 0-100` -> `threshold=strictness/100*0.6` | 200 value echo | 422 out of range |
+| `POST /settings/simplicity` | `simplicity: int 10-15` | 200 value echo | 422 out of range |
+| `POST /settings/sensitivity` | `sensitivity: low\|standard\|hide` | 200 value echo | 422 bad value |
+| `GET /settings/db-stats` | none | 200 `#terms-stats` `{db_bytes,papers,chunks,vectors,last_run}` via `get_db_stats()` | 200 zeros when no DB |
+| `POST /settings/mail` | `to: email, from: email, smtp: host[:port], freq: daily\|weekly\|monthly` | 200 `#mail-status` (`N subscribed` / failure text loudly) | 422 bad email/freq; SMTP failure -> 200 loud status (retry next run) |
 
 ## Doctor export / mail
 
-* `GET /sessions/{id}/doctor` → `#doctor-dialog` single LLM summary across ALL Q&As (title + short answer + citations + unknowns + doctor-questions; ~500 words max) + Print.
-* `POST /tracker/run` (APScheduler weekly default) → re-extract terms from subscribed sessions' past questions + ID-first sync (`pageSize=100`/`HIT_LIMIT=50000`) + per-session top-K re-retrieval → single combined email only if ≥1 affected.
+| Method+path | Request | Success | Errors |
+|---|---|---|---|
+| `GET /sessions/{id}/doctor` | none | 200 `#doctor-dialog` single LLM summary across ALL Q&As (title + short + cites + unknowns + doctor-Qs; ~500w max) + Print | 404 unknown id |
+| `POST /tracker/run` | none (manual; scheduler `APScheduler` `mail_freq` default `weekly`) | 200 `{run_at, new_pmcids:int, affected:[session_id]}`; email only if >=1 affected | SMTP failure -> 200 `{sent:false}` + loud `#mail-status` |
 
-Open: exact fragment HTML, `position` migration (both resolved during P1.7; `#ollama-embed` already in mockup).
+Content-type: full pages `text/html`; HTMX mutations return HTML fragments with the same element IDs listed above. Mutations return `HX-Redirect` only where noted. 500s render fail-closed fragment, never leak keys.

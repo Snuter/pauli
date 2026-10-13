@@ -24,7 +24,7 @@ sources:
 * Sensitivity — `low` / `standard` / `hide details`, local single-user.[^user-journey]
 * `topic_hash` — DROPPED 2026-10-12 (was stable hash for raw dirs; replaced by single shared `data/raw/<PMCID>.*`, global corpus).[^tech-concept]
 * `TOP_K` / `SCORE_THRESHOLD` — retrieval `15` / `0.3` defaults; `TOP_K` fixed.[^tech-concept]
-* sqlite-vec — vector store in `data/pauli.db` with PMCID, title, year, authors, URL (+ optional `topic_hash` provenance); retrieval is global, no `topic_hash` filter.[^tech-concept]
+* sqlite-vec — vector store in `data/pauli.db` with PMCID, title, year, authors, URL; retrieval is global, no `topic_hash` filter.[^tech-concept]
 * `OLLAMA_HOST` / `OLLAMA_CHAT_MODEL` / `OLLAMA_EMBED_MODEL` / `OLLAMA_API_KEY` — user-configured Ollama; key cloud-only, never committed.[^tech-concept]
 
 [^user-journey]: P.A.U.L.I. User-Journey Concept

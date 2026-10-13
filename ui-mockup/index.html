@@ -405,14 +405,14 @@ dialog article footer button[type="submit"] { width: auto; }
   function stripGateTags(html) {
     return String(html || "").replace(/\[GATE:[a-z-]+\]/g, "");
   }
+  // DO-NOT-COPY for backend: gating is LLM-only (safety/gate.py allowlist).
+  // This mock stub simulates the chat model emitting [GATE:*] tags.
+  // Production MUST NOT use keyword matching (no keyword fallback).
   function tagForQuestion(q) {
-    var l = String(q || "").toLowerCase();
-    if (l.indexOf("suicid") !== -1 || l.indexOf("self-harm") !== -1 || l.indexOf("self harm") !== -1) return "suicidality";
-    if (l.indexOf("prognos") !== -1 || l.indexOf("mortal") !== -1 || l.indexOf("die") !== -1 || l.indexOf("death") !== -1 || l.indexOf("survival") !== -1) return "prognosis";
-    if (l.indexOf("disab") !== -1) return "disability";
-    if (l.indexOf("pregnan") !== -1 || l.indexOf("child") !== -1 || l.indexOf("baby") !== -1) return "pregnancy";
-    if (l.indexOf("trauma") !== -1) return "trauma";
-    if (l.indexOf("crash") !== -1) return "pem-crash";
+    // Demo stub only: always no-gate unless the question already carries an explicit tag.
+    // UI demo can inject "[GATE:prognosis]" etc. manually to preview the blur card.
+    var m = /\[GATE:([a-z-]+)\]/.exec(String(q || ""));
+    if (m && GATE_CATS[m[1]]) return m[1];
     return null;
   }
   function answerFor(q) {
