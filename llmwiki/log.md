@@ -1,6 +1,9 @@
 # LLMWIKI Update Log
 
 ## 2026-10-13
+* **Fix**: Europe PMC REST contract frozen (`search?query=&format=json` + `fullTextXML`, example OR-union query, minimal fixture, `Retry-After`/retry) + `get_generate_system()` (`GENERATE_SYSTEM.format(vocab=GATE_VOCAB)`, `{vocab}`-leak test) + S1 loose `>=` dep minimums (`fastapi/uvicorn/httpx/sqlite-vec/ollama/jinja2/textstat/apscheduler`).
+
+## 2026-10-13
 * **Spec**: Full P0-P3 ledger expansion (per-task signatures, exact `pytest` verify, `Forbidden:` negatives, DAG notes, mock strategies) + new `pauli/questionanswering/prompts.py` canonical texts (`REWRITE_PROMPT`, `GENERATE_SYSTEM`, `ABSTAIN_TEMPLATE`, `DOCTOR_SUMMARY_PROMPT`, `GATE_ALLOWLIST`) + `tests/test_prompts.py` + `architecture/web-api.md` per-endpoint request-shape tables (fields/types/ranges, success fragments, 422/404, polling, fail-closed) + `rag-chat.md` prompt refs.
 * **Fix**: Spec completeness for autonomous build — new `pauli/config.py` (`data/config.json` JSON authority, `Settings` validate/load/save, key from env only) + `tests/test_config.py`; new `pauli/db.py:SCHEMA_SQL` canonical DDL (7 tables, types/FKs/indexes, no `topic_hash`) + `tests/test_db.py`; `glossary.md` dropped stale `topic_hash` provenance; `tech-stack.md` pins `data/config.json`; `tracker-export.md` expanded (`affected` predicate, email subject, `#mail-status` failure, 5-part ~500w export); `web-api.md` freezes fragments from `ui-mockup/` IDs, `position` 0-based; `ui-mockup` `tagForQuestion()` replaced with LLM-only stub + DO-NOT-COPY; `implementation/index.md`+`phase-S.md` converted to task ledger (`ID -> files -> pytest -> Forbidden`).
 

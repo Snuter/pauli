@@ -31,6 +31,15 @@ At sensitive spans emit an inline tag [GATE:{vocab}] (allowed: suicidality, prog
 Keep the answer under 150 words. Plain patient language.
 Research info only, not medical advice."""
 
+
+def get_generate_system() -> str:
+    """Render GENERATE_SYSTEM with the frozen gate vocabulary.
+
+    Call sites MUST use this (never hand-format) so `{vocab}` never leaks
+    into a model prompt. See `tests/test_prompts.py`.
+    """
+    return GENERATE_SYSTEM.format(vocab=GATE_VOCAB)
+
 ABSTAIN_TEMPLATE = (
     "I don't know from your cached papers — "
     "[what is missing: {missing}; what term to add: {term}; "

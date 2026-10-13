@@ -10,6 +10,12 @@ def test_generate_system_has_citation_and_gate():
         assert cat in P.GENERATE_SYSTEM
 
 
+def test_generate_system_formats_vocab():
+    rendered = P.get_generate_system()
+    assert "{vocab}" not in rendered
+    assert "[GATE:suicidality|prognosis|disability|pregnancy|trauma|pem-crash]" in rendered
+
+
 def test_abstain_template_slots():
     s = P.ABSTAIN_TEMPLATE.format(missing="m", term="t", doctor_q="d")
     assert "cached papers" in s
