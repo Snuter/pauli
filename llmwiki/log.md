@@ -1,6 +1,8 @@
 # LLMWIKI Update Log
 
-## 2026-10-13
+## 2026-10-15
+* **Decision**: Applied user Q&A — `import ollama` canonical (`ollama.Client`, raw httpx forbidden in backend), `simplify()` LLM-rewrite only via new `SIMPLIFY_PROMPT`, scheduler in `web/app.py` lifespan with in-memory job lock + runtime `chat_fn`, `web-api.md` templates frozen + HTMX fragment example, store/parse agent-picks with in-module doc guardrails, mockup keyword routing forbidden in P1.7b. Fixed `DOCTOR_SUMMARY_PROMPT` typo. Updated `web-api.md`, `language-modes.md`, `tech-stack.md`, `tracker-export.md`, `data-pipeline.md`, `phase-P0.md`/`phase-P1.md`/`phase-P3.md`, `prompts.py`, `test_prompts.py`.
+
 * **Fix**: Mockup strictness default 30->50 + tech-stack `import ollama`/dupe + LLM-labeled `[CONFLICT]` (`CONFLICT_MARKER`, code renders both sides) + digest MIME skeleton in tracker-export.
 * **Fix**: Stale removals DONE-guarded (P0.1b/P0.3 skip when residue absent) + S1 `import ollama` + tracker `FIRST_PDATE` sort-vs-window note + citation rule (LLM judges factuality, checker format+membership) + FK targets 10->6/12->8/15->10 (+-1.5, monotonic) + digest multipart HTML+text.
 * **Fix**: Threshold canonical linear (`strictness/100*0.6`, default 50->0.3; `max()` floor removed from P1.1) + Europe PMC typos (sort-param space, `{PMCID}` fullTextXML + abstract-fallback, `FIRST_PDATE_D` sort vs window-filter disambiguation across pipeline/P0/P3) + crisis EU-generic 112 (placeholder + `assumed` hedging removed) + mockup DO-NOT-COPY extended to `answerFor()` keyword routing.

@@ -28,3 +28,9 @@ def test_doctor_prompt_has_five_parts():
 
 def test_conflict_marker_literal():
     assert P.CONFLICT_MARKER == "[CONFLICT]"
+
+
+def test_simplify_prompt_slots():
+    s = P.SIMPLIFY_PROMPT.format(text="t [PMC123]", simplicity=12)
+    assert "{text}" not in s and "{simplicity}" not in s
+    assert "[PMCID]" in s or "PMCID" in s

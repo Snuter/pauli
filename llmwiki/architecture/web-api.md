@@ -7,9 +7,32 @@ status: stable
 generated: {by: agent/opencode, at: 2026-10-12T00:00:00Z}
 ---
 
-# Web API — approved 2026-10-12 (fragments resolved during P1.7)
+# Web API — approved 2026-10-12, templates frozen 2026-10-15 (per user Q&A)
 
 Backend replicates `ui-mockup/index.html` element IDs. All pages server-rendered Jinja; mutations return HTMX fragments.
+
+## Templates (frozen 2026-10-15)
+
+`pauli/web/`: `app.py` (FastAPI + lifespan), `routes_sessions.py`, `routes_chat.py`, `routes_settings.py`, `templates/base.html`, `templates/settings.html`, `templates/ask.html`, `templates/fragments/session_li.html`, `templates/fragments/answer_li.html`, `templates/fragments/status.html`. Full pages extend `base.html` (Pico CSS, `.layout` grid, sidebar `#session-list` + `main`). Mutations return only the fragment file (same IDs as mockup, no layout wrapper).
+
+Fragment example (`answer_li.html`, HTMX):
+
+```html
+<li>
+<div class="q">{{ question }}</div>
+<div class="q-actions no-print"><!-- move/edit/delete buttons, data-act=up|down|edit|del --></div>
+<div class="a">{{ answer_html|safe }}</div>
+</li>
+```
+
+```html
+<form id="ask-form" hx-post="/sessions/{{ session_id }}/ask" hx-target="#history-list" hx-swap="beforeend">
+<input id="ask-input" name="q" maxlength="500" required>
+<button type="submit">Ask</button>
+</form>
+```
+
+Polling: `<div hx-get="/sessions/{{ session_id }}/digest-progress" hx-trigger="every 2s" hx-target="this">` until `{digesting:false}`.
 
 ## Views
 

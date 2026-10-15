@@ -51,12 +51,18 @@ ABSTAIN_TEMPLATE = (
 # `conflicting` branch (code never heuristically detects contradiction).
 CONFLICT_MARKER = "[CONFLICT]"
 
-DOCTOR_SUMMARY_PROMPT = """Condense ALL Q&As of this session into one Muchas gracias printout, max ~500 words, exactly 5 parts:
+DOCTOR_SUMMARY_PROMPT = """Condense ALL Q&As of this session into one 1-page printout, max ~500 words, exactly 5 parts:
 1. Short answer 2. Citations ([PMCID] from retrieval set only)
 3. Unknowns 4. Suggested doctor questions 5. Digest line (N new paper(s)).
 Truncate with ellipsis if over 500 words; never drop citations.
 Session title: {title}
 Q&As:
 {qas}"""
+
+SIMPLIFY_PROMPT = """Rewrite the answer at simplicity {simplicity} (10-15, 10 simplest).
+Rules: 10-11 very short sentences + expand acronyms + full glossary (PEM -> crash after effort) + `What this means:` line; 12-13 short sentences + glossary; 14-15 longer sentences, keep term + short definition (e.g. post-exertional malaise (crash after effort)).
+Add no facts. Preserve every [PMCID] citation token verbatim.
+Text:
+{text}"""
 
 OLLAMA_HELLO_PROMPT = "Say hi briefly."
