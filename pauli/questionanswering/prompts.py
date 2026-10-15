@@ -51,10 +51,9 @@ ABSTAIN_TEMPLATE = (
 # `conflicting` branch (code never heuristically detects contradiction).
 CONFLICT_MARKER = "[CONFLICT]"
 
-DOCTOR_SUMMARY_PROMPT = """Condense ALL Q&As of this session into one 1-page printout, max ~500 words, exactly 5 parts:
-1. Short answer 2. Citations ([PMCID] from retrieval set only)
-3. Unknowns 4. Suggested doctor questions 5. Digest line (N new paper(s)).
-Truncate with ellipsis if over 500 words; never drop citations.
+DOCTOR_SUMMARY_PROMPT = """Condense ALL Q&As of this session into one 1-page printout, max ~500 words, exactly these 5 headings in order:
+1. Short answer 2. Citations 3. Unknowns 4. Ask your doctor 5. Digest line.
+Rules: Citations are [PMCID] from the retrieval set only; word count is whitespace-split; if over 500 words truncate prose with ellipsis but never drop citations.
 Session title: {title}
 Q&As:
 {qas}"""

@@ -15,7 +15,7 @@ Backend replicates `ui-mockup/index.html` element IDs. All pages server-rendered
 
 `pauli/web/`: `app.py` (FastAPI + lifespan), `routes_sessions.py`, `routes_chat.py`, `routes_settings.py`, `templates/base.html`, `templates/settings.html`, `templates/ask.html`, `templates/fragments/session_li.html`, `templates/fragments/answer_li.html`, `templates/fragments/status.html`. Full pages extend `base.html` (Pico CSS, `.layout` grid, sidebar `#session-list` + `main`). Mutations return only the fragment file (same IDs as mockup, no layout wrapper).
 
-Fragment example (`answer_li.html`, HTMX):
+Fragment example (`answer_li.html`, HTMX + frozen sanitizer 2026-10-15):
 
 ```html
 <li>
@@ -25,6 +25,8 @@ Fragment example (`answer_li.html`, HTMX):
 </li>
 ```
 
+`answer_html` MUST come from `pauli/web/sanitize.py:escape_and_linkify` (stdlib `html.escape` then linkify `[PMC\d+]` only; never `|safe` raw LLM output; `allowed` = retrieval PMCID set, others stay text).
+
 ```html
 <form id="ask-form" hx-post="/sessions/{{ session_id }}/ask" hx-target="#history-list" hx-swap="beforeend">
 <input id="ask-input" name="q" maxlength="500" required>
@@ -32,7 +34,22 @@ Fragment example (`answer_li.html`, HTMX):
 </form>
 ```
 
-Polling (decided 2026-10-15: JSON endpoint): `<div hx-get="/sessions/{{ session_id }}/digest-progress" hx-trigger="every 2s" hx-target="this">` polls JSON `{digesting:bool,count:int}` until `{digesting:false}`; HTMX wrapper swaps `data-testid=digest-progress` text, not a full HTML fragment.
+Polling (frozen 2026-10-15 per user Q&A: JSON + tiny JS poller, NOT hx-get-JSON): `GET /sessions/{id}/digest-progress` returns `application/json {digesting:bool,count:int}` where `count` = remaining unfetched PMCIDs (`run_fast_slice().remaining` decremented by `backfill_job`). Template polls with `fetch` every 2s and writes text into `[data-testid=digest-progress]` until `{digesting:false}`:
+
+```html
+<div data-testid="digest-progress"></div>
+<script>
+setInterval(async () => {
+  const r = await fetch("/sessions/{{ session_id }}/digest-progress");
+  const j = await r.json();
+  document.querySelector("[data-testid=digest-progress]").textContent =
+    j.digesting ? ("Digesting " + j.count + " paper(s)…") : "";
+  if (!j.digesting) clearInterval(this);
+}, 2000);
+</script>
+```
+
+Validation fragments (frozen 2026-10-15): all 422s return `pauli/config.py:validation_error_fragment(msg)` HTML (`<p class="meta" role="alert">…</p>`, escaped, no secrets) with status 422; dialogs stay open. Ollama form uses `validate_ollama_form` (host http(s) URL, `chat_model` 1-100 required, `embed_model` 1-100 required); mail form uses `validate_mail_form` (all-empty = disabled; else to/from email + smtp `host:port` explicit + freq enum; bare host = 422).
 
 ## Views
 
@@ -61,7 +78,7 @@ Any session data change bumps `created_at` (ask/edit/move/delete-q/rename/sub-to
 | `POST /sessions/{id}/questions/{pos}/edit` | `q: str, 1-500` (`#qedit-dialog`, rerun retrieve+generate, reset gating) | 200 replace in place | 422 on empty/overlong; 404 bad pos |
 | `POST /sessions/{id}/questions/{pos}/delete` | confirm `#qdelete-dialog` | 200 remove `li` session-locally (corpus untouched) | 404 bad pos |
 
-Backfill polling: `GET /sessions/{id}/digest-progress` returns JSON `{digesting:bool,count:int}` (decided 2026-10-15; 2s interval) until complete; manual `refresh-answer` triggers refresh endpoint above.
+Backfill polling: `GET /sessions/{id}/digest-progress` returns JSON `{digesting:bool,count:int}` (`count` = remaining unfetched PMCIDs; frozen 2026-10-15, 2s JS `fetch` poller, NOT `hx-get`) until complete; manual `refresh-answer` triggers refresh endpoint above.
 
 ## Settings (`#view-settings`)
 

@@ -1,8 +1,20 @@
 """Canonical SQLite schema (Phase S4) — single shared global corpus.
 
 No ``topic_hash`` anywhere (dropped 2026-10-12). Retrieval is global.
-``chunks.vec`` is the sqlite-vec vector column (embedding dim depends on
-``OLLAMA_EMBED_MODEL``); ``vectors`` count = ``chunks`` count.
+``chunks.vec`` is a float32 BLOB (frozen 2026-10-15: BLOB + Python cosine,
+not a ``vec0`` virtual table — no native extension load in MVP);
+``vectors`` count = ``chunks`` count.
+
+Session invariants (frozen 2026-10-15 per user Q&A):
+- ``sessions.id`` is uuid4-hex (32 lowercase hex chars), never the title.
+  ``title`` stays UNIQUE for the sidebar; mockup ``Date.now()`` ms values
+  convert via ``ms // 1000`` on port. ``created_at`` is unix seconds (int).
+- ``answers.mode`` in ``{cited,unknown,conflict,gated}`` (``''`` allowed only
+  as a transient pre-write default; enforced by CHECK below).
+- ``session_answers.position`` is 0-based, contiguous per session.
+  Move = swap the two rows' positions then renumber ``0..n-1`` in one
+  transaction. ``session_answers.question`` is a display snapshot;
+  ``answers(question,answer)`` is canonical content.
 """
 
 from __future__ import annotations
@@ -30,7 +42,7 @@ CREATE TABLE IF NOT EXISTS answers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   question TEXT NOT NULL,
   answer TEXT NOT NULL DEFAULT '',
-  mode TEXT NOT NULL DEFAULT ''
+  mode TEXT NOT NULL DEFAULT '' CHECK (mode IN ('', 'cited', 'unknown', 'conflict', 'gated'))
 );
 CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
