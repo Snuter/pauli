@@ -1,6 +1,7 @@
 """Phase S3 verify: config importable, JSON round-trip, no key persistence."""
 
 import json
+import os
 
 from pauli import config as C
 
@@ -10,7 +11,7 @@ def test_constants():
     assert C.CHUNK_OVERLAP == 50
     assert C.TOP_K == 15
     assert C.SCORE_THRESHOLD == 0.3
-    assert C.CONFIG_PATH == "data/config.json"
+    assert C.CONFIG_PATH == os.path.join("data", "config.json")
     assert C.strictness_to_threshold(50) == 0.3
 
 
