@@ -32,7 +32,7 @@ Fragment example (`answer_li.html`, HTMX):
 </form>
 ```
 
-Polling: `<div hx-get="/sessions/{{ session_id }}/digest-progress" hx-trigger="every 2s" hx-target="this">` until `{digesting:false}`.
+Polling (decided 2026-10-15: JSON endpoint): `<div hx-get="/sessions/{{ session_id }}/digest-progress" hx-trigger="every 2s" hx-target="this">` polls JSON `{digesting:bool,count:int}` until `{digesting:false}`; HTMX wrapper swaps `data-testid=digest-progress` text, not a full HTML fragment.
 
 ## Views
 
@@ -61,7 +61,7 @@ Any session data change bumps `created_at` (ask/edit/move/delete-q/rename/sub-to
 | `POST /sessions/{id}/questions/{pos}/edit` | `q: str, 1-500` (`#qedit-dialog`, rerun retrieve+generate, reset gating) | 200 replace in place | 422 on empty/overlong; 404 bad pos |
 | `POST /sessions/{id}/questions/{pos}/delete` | confirm `#qdelete-dialog` | 200 remove `li` session-locally (corpus untouched) | 404 bad pos |
 
-Backfill polling: `GET /sessions/{id}/digest-progress` (2s interval, `{digesting:bool,count:int}`) until complete; manual `refresh-answer` triggers refresh endpoint above.
+Backfill polling: `GET /sessions/{id}/digest-progress` returns JSON `{digesting:bool,count:int}` (decided 2026-10-15; 2s interval) until complete; manual `refresh-answer` triggers refresh endpoint above.
 
 ## Settings (`#view-settings`)
 
@@ -73,7 +73,7 @@ Backfill polling: `GET /sessions/{id}/digest-progress` (2s interval, `{digesting
 | `POST /settings/simplicity` | `simplicity: int 10-15` | 200 value echo | 422 out of range |
 | `POST /settings/sensitivity` | `sensitivity: low\|standard\|hide` | 200 value echo | 422 bad value |
 | `GET /settings/db-stats` | none | 200 `#terms-stats` `{db_bytes,papers,chunks,vectors,last_run}` via `get_db_stats()` | 200 zeros when no DB |
-| `POST /settings/mail` | `to: email, from: email, smtp: host[:port], freq: daily\|weekly\|monthly` | 200 `#mail-status` (`N subscribed` / failure text loudly) | 422 bad email/freq; SMTP failure -> 200 loud status (retry next run) |
+| `POST /settings/mail` | `to: email, from: email, smtp: host:port (explicit port required), freq: daily\|weekly\|monthly` | 200 `#mail-status` (`N subscribed` / failure text loudly) | 422 bad email/freq/bare-host-without-port; SMTP failure -> 200 loud status (retry next run) |
 
 ## Doctor export / mail
 
@@ -82,4 +82,4 @@ Backfill polling: `GET /sessions/{id}/digest-progress` (2s interval, `{digesting
 | `GET /sessions/{id}/doctor` | none | 200 `#doctor-dialog` single LLM summary across ALL Q&As (title + short + cites + unknowns + doctor-Qs; ~500w max) + Print | 404 unknown id |
 | `POST /tracker/run` | none (manual; scheduler `APScheduler` `mail_freq` default `weekly`) | 200 `{run_at, new_pmcids:int, affected:[session_id]}`; email only if >=1 affected | SMTP failure -> 200 `{sent:false}` + loud `#mail-status` |
 
-Content-type: full pages `text/html`; HTMX mutations return HTML fragments with the same element IDs listed above. Mutations return `HX-Redirect` only where noted. 500s render fail-closed fragment, never leak keys.
+Content-type: full pages `text/html`; HTMX mutations return HTML fragments with the same element IDs listed above, except `GET digest-progress` and `POST /tracker/run` which return JSON (`application/json`). Mutations return `HX-Redirect` only where noted. 500s render fail-closed fragment, never leak keys.

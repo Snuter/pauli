@@ -1,6 +1,7 @@
 # LLMWIKI Update Log
 
 ## 2026-10-15
+* **Decision**: Applied user Q&A batch 2 — `digest-progress` JSON (`{digesting,count}`, HTMX wrapper), job signatures stay minimal with in-module dep docs, persistence agent-picks with invariant (one transaction, uuid4-hex id, unix-seconds `created_at`, `mode` enum, 0-based `position`), threshold owned by `store.search_vectors` (`retrieve` passes through), frozen crisis copy (`Research info only, not medical advice` + `Crisis: call 112`), SMTP explicit `host:port` (bare host 422). Updated `web-api.md`, `rag-chat.md`, `safety-gating.md`, `tracker-export.md`, `phase-P0.md`/`phase-P1.md`/`phase-P2.md`/`phase-P3.md`.
 * **Decision**: Applied user Q&A — `import ollama` canonical (`ollama.Client`, raw httpx forbidden in backend), `simplify()` LLM-rewrite only via new `SIMPLIFY_PROMPT`, scheduler in `web/app.py` lifespan with in-memory job lock + runtime `chat_fn`, `web-api.md` templates frozen + HTMX fragment example, store/parse agent-picks with in-module doc guardrails, mockup keyword routing forbidden in P1.7b. Fixed `DOCTOR_SUMMARY_PROMPT` typo. Updated `web-api.md`, `language-modes.md`, `tech-stack.md`, `tracker-export.md`, `data-pipeline.md`, `phase-P0.md`/`phase-P1.md`/`phase-P3.md`, `prompts.py`, `test_prompts.py`.
 
 * **Fix**: Mockup strictness default 30->50 + tech-stack `import ollama`/dupe + LLM-labeled `[CONFLICT]` (`CONFLICT_MARKER`, code renders both sides) + digest MIME skeleton in tracker-export.
