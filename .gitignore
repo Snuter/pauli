@@ -222,3 +222,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# P.A.U.L.I. runtime data (Phase S5)
+data/pauli.db
+data/raw/
+data/config.json

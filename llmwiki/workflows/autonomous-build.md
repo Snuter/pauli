@@ -15,7 +15,7 @@ Executes the task ledger in `/implementation/` one task at a time, in order `S -
 2. Test first (TDD) — write the named test before the implementation. Run it, confirm RED (fails as expected). Never implement before the failing test exists.
 3. Implement — minimal code that makes the test pass. Surgical changes only: touch what the task requires, match existing style, no speculative features or adjacent refactors.
 4. Test RUN — run the named test file, then the full suite (`poetry run pytest -q`). Both must be green. Loop on implement + test until green; do not start the next task while red.
-5. Commit if all green — `git add` only touched files (plus wiki touch if behavior changed per `AGENTS.md` §5). One commit per task, message `"<ID> <short desc>"`. If red: no commit — fix, or stop and report.
+5. Commit if all green — `git add` only touched files (plus wiki touch if behavior changed per `AGENTS.md` §5). One commit per task, message `"IMPL-Agent: <ID> <short desc>"` (e.g. `"IMPL-Agent: S1 Deps in pyproject.toml"`). If red: no commit — fix, or stop and report.
 6. Next task — return to step 1.
 
 Stop conditions: red suite that does not converge, ambiguous spec (stop and ask per `AGENTS.md` §1), or phase complete.
